@@ -1,7 +1,6 @@
 
 #include "pch.h"
 #include "Application.h"
-#include "Events/EventRelay.h"
 
 #include <GLFW/glfw3.h>
 
