@@ -1,4 +1,14 @@
+#include "pch.h"
 #include "Log.h"
+
+#ifdef PSTC_DEBUG
+
+namespace Pistacio::Logger {
+
+  std::shared_ptr<spdlog::logger> s_CoreLogger;
+  std::shared_ptr<spdlog::logger> s_ClientLogger;
+
+}
 
 void Pistacio::Logger::Init()
 {
@@ -20,4 +30,5 @@ std::shared_ptr<spdlog::logger> Pistacio::Logger::GetClientLogger()
   return s_ClientLogger;
 }
 
+#endif
 

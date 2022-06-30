@@ -1,6 +1,4 @@
-
 #include <Pistacio.h>
-
 
 class Sandbox : public Pistacio::Application {
 public:
@@ -8,8 +6,7 @@ public:
   ~Sandbox() {}
 };
 
-
-Pistacio::Application* Pistacio::CreateApplication()
+Pistacio::Application* Pistacio::ApplicationFactory::doCreate()
 {
   return new Sandbox();
 }
