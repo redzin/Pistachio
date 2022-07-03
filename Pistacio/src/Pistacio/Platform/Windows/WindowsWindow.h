@@ -1,8 +1,7 @@
 #pragma once
 #include "pch.h"
-#include "Pistacio/Window.h"
+#include "Pistacio/Core/Window.h"
 
-#include "GLFW/glfw3.h"
 
 namespace Pistacio
 {

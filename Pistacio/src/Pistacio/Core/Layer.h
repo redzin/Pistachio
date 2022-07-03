@@ -4,7 +4,7 @@
 namespace Pistacio
 {
 
-  class Layer
+  class PSTC_API Layer
   {
   public:
     Layer(const std::string& debugName = "Layer");
@@ -13,6 +13,7 @@ namespace Pistacio
     virtual void OnAttach() { }
     virtual void OnDetach() { }
     virtual void OnUpdate() { }
+    virtual void OnGuiRender() { }
     virtual void OnEvent(Event& e) { }
 
     const std::string& GetName() const { return debugName; }

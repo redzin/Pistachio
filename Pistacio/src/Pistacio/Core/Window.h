@@ -1,14 +1,11 @@
 #pragma once
 
 #include "pch.h"
-#include "Pistacio/Core.h"
-
-
 
 namespace Pistacio
 {
 
-  class Application;
+  //class Application;
 
   class Window
   {

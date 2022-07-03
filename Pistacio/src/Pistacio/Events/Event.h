@@ -1,12 +1,11 @@
 #pragma once
 
 #include "pch.h"
-#include "Pistacio/Core.h"
 #include <spdlog/fmt/bundled/format.h>
 
 namespace Pistacio {
   
-  enum class EventType
+  enum class PSTC_API EventType
   {
     WindowCloseEvent,
     WindowResizeEvent,
@@ -15,7 +14,7 @@ namespace Pistacio {
     MouseClickEvent
   };
   
-  class Event
+  class PSTC_API Event
   {
   public:
     virtual ~Event() = default;
@@ -30,7 +29,7 @@ namespace Pistacio {
     }
   };
 
-  class WindowCloseEvent : public Event
+  class PSTC_API WindowCloseEvent : public Event
   {
   public:
     WindowCloseEvent() = default;
@@ -39,7 +38,7 @@ namespace Pistacio {
     virtual const char* GetName() const override;
   };
   
-  class WindowResizeEvent : public Event
+  class PSTC_API WindowResizeEvent : public Event
   {
   public:
     WindowResizeEvent(int width, int height) : width(width), height(height) { }
@@ -51,7 +50,7 @@ namespace Pistacio {
     const int height;
   };
 
-  class KeyEvent : public Event
+  class PSTC_API KeyEvent : public Event
   {
   public:
     KeyEvent(Input::ButtonAction action, Input::KeyCode key, int modFlags) : action(action), key(key), modFlags(modFlags) { }
@@ -64,7 +63,7 @@ namespace Pistacio {
     const int modFlags;
   };
 
-  class MouseMoveEvent : public Event
+  class PSTC_API MouseMoveEvent : public Event
   {
   public:
     MouseMoveEvent(double x, double y) : x(x), y(y) { }
@@ -76,7 +75,7 @@ namespace Pistacio {
     const double y;
   };
 
-  class MouseClickEvent : public Event
+  class PSTC_API MouseClickEvent : public Event
   {
   public:
     MouseClickEvent(Input::ButtonAction action, Input::MouseCode mouseKey, int modFlags) : action(action), mouseKey(mouseKey), modFlags(modFlags) { }

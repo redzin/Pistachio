@@ -2,7 +2,6 @@
 
 #include "pch.h"
 #include "Core.h"
-#include "Window.h"
 
 namespace Pistacio {
   
@@ -16,13 +15,14 @@ namespace Pistacio {
     void OnEvent(Event& e);
     void Init();
     void Run();
-
-    bool app_running = true;
-
-
+    void PushLayer(Layer* layer);
+    void PushOverlay(Layer* layer);
 
   private:
+    bool app_running = true;
     std::unique_ptr<Window> window;
+    LayerStack layerStack;
+    ImGuiRenderer imguiRenderer;
   };
 
   class ApplicationFactory

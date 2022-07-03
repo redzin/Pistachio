@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Window.h"
-#include "Platform/Windows/WindowsWindow.h"
+
+#ifdef PSTC_PLATFORM_WINDOWS
+#include "Pistacio/Platform/Windows/WindowsWindow.h"
 
 namespace Pistacio
 {
@@ -14,3 +16,4 @@ namespace Pistacio
 #endif
 }
 }
+#endif

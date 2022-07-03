@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Pistacio/Application.h"
-#include "Pistacio/EntryPoint.h"
-
-
+#include "Pistacio/Core/Application.h"
+#include "Pistacio/Logging/Log.h"
+#include "Pistacio/Events/Event.h"

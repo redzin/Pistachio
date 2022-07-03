@@ -1,14 +1,17 @@
 #include "pch.h"
 #include "WindowsWindow.h"
 
-#include <chrono>>
-#include <thread>
-
 using namespace std::chrono_literals;
 
 namespace Pistacio
 {
   static bool GLFW_Initialized = false;
+
+  void LoadGlad()
+  {
+    int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    PSTC_CORE_ASSERT(status, "Failed to to load glad!");
+  }
 
   int ConvertGLFWModToPistacioMod(int mods)
   {
@@ -29,7 +32,9 @@ namespace Pistacio
 
   void WindowsWindow::Init(const WindowProperties& props)
   {
-    
+
+    PSTC_CORE_INFO("Creating GLFW window {0}: ({1}, {2}) ...", data.Title, data.Width, data.Height);
+
     data.Title = props.Title;
     data.Width = props.Width;
     data.Height = props.Height;
@@ -38,33 +43,33 @@ namespace Pistacio
     {
 
       bool success = glfwInit();
+
       if (success)
       {
         GLFW_Initialized = true;
-        PSTC_CORE_INFO("GLFW initialized!");
-        glfwSetErrorCallback([](int error, const char* description)
-          {
-            PSTC_CORE_ERROR("GLFW Error ({0}): {1}", error, description);
+        PSTC_CORE_TRACE("GLFW initialized!");
+        glfwSetErrorCallback([](int error, const char* description) {
+          PSTC_CORE_ERROR("GLFW Error {0}: {1}", error, description);
+          PSTC_DEBUGBREAK();
           });
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+
+
+        glfwWindowHint(GLFW_DECORATED, true);
+        glfwWindowHint(GLFW_FLOATING, true);
 
         glfwWindow = glfwCreateWindow(data.Width, data.Height, &data.Title[0], NULL, NULL);
-        if (!glfwWindow)
-        {
-          PSTC_CORE_FATAL("GLFW window creation failed!");
-        }
-        else
-        {
-          PSTC_CORE_INFO("Created window {0}: ({1}, {2})", data.Title, data.Width, data.Height);
-        }
+        PSTC_CORE_ASSERT(glfwWindow, "GLFW window creation failed!");
       }
 
       glfwMakeContextCurrent(glfwWindow);
+      LoadGlad();
       glfwSetWindowUserPointer(glfwWindow, &data);
 
       glfwSetWindowCloseCallback(glfwWindow, [](GLFWwindow* glfwWindow)
         {
           Pistacio::WindowCloseEvent e { };
-          PSTC_CORE_INFO("Exiting...");
           auto data = reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(glfwWindow));
           data->EventCallback(e);
         });
@@ -72,9 +77,6 @@ namespace Pistacio
       glfwSetWindowSizeCallback(glfwWindow, [](GLFWwindow* glfwWindow, int width, int height)
         {
           Pistacio::WindowResizeEvent e{ width, height };
-          #ifdef PSTC_VERBOSE_DEBUG
-            PSTC_CORE_INFO("Resize to ({0}, {1})", e.width, e.height);
-          #endif
           auto data = reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(glfwWindow));
           data->EventCallback(e);
         });

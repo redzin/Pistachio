@@ -4,3 +4,6 @@
 [submodule "Pistacio/vendor/GLFW"]
 	path = Pistacio/vendor/GLFW/GLFW
 	url = https://github.com/glfw/glfw.git
+[submodule "Pistacio/vendor/imgui/imgui"]
+	path = Pistacio/vendor/imgui/imgui
+	url = https://github.com/ocornut/imgui.git
