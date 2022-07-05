@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "WindowsWindow.h"
+#include "WindowsInput.cpp"
 
 using namespace std::chrono_literals;
 

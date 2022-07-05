@@ -5,7 +5,7 @@
 class CounterApp : public Pistacio::Application
 {
 public:
-  CounterApp() = default;
+  CounterApp() : Application("Counter App", 320, 40) {}
   ~CounterApp() = default;
 };
 

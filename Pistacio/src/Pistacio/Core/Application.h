@@ -8,21 +8,25 @@ namespace Pistacio {
   class PSTC_API Application
   {
   public:
-    Application();
+    Application(std::string appName);
+    Application(std::string appName, uint32_t width, uint32_t height);
     Application(Application& app) = default;
     ~Application() { }
 
     void OnEvent(Event& e);
-    void Init();
     void Run();
     void PushLayer(Layer* layer);
     void PushOverlay(Layer* layer);
+
+    static Application* Get();
 
   private:
     bool app_running = true;
     std::unique_ptr<Window> window;
     LayerStack layerStack;
     ImGuiRenderer imguiRenderer;
+
+    static Application* singletonInstance;
   };
 
   class ApplicationFactory

@@ -12,9 +12,10 @@ workspace "Pistacio"
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 IncludeDir = {}
-IncludeDir["GLFW"] = "Pistacio/vendor/GLFW/GLFW/include"
-IncludeDir["glad"] = "Pistacio/vendor/glad/glad/include"
-IncludeDir["ImGui"] = "Pistacio/vendor/ImGui/ImGui"
+IncludeDir["GLFW"] = "%{wks.location}/Pistacio/vendor/GLFW/GLFW/include"
+IncludeDir["glad"] = "%{wks.location}/Pistacio/vendor/glad/glad/include"
+IncludeDir["ImGui"] = "%{wks.location}/Pistacio/vendor/ImGui/ImGui"
+IncludeDir["glm"] = "%{wks.location}/Pistacio/vendor/glm"
 
 project "Pistacio"
 	location "Pistacio"
@@ -31,7 +32,10 @@ project "Pistacio"
 	files
 	{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.cpp",
+		"%{prj.name}/vendor/glm/glm/**.hpp",
+		"%{prj.name}/vendor/glm/glm/**.inl"
+		
 	}
 
 	includedirs
@@ -40,7 +44,8 @@ project "Pistacio"
 		"%{prj.name}/src",
 		"%{IncludeDir.glad}",
 		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.glm}"
 	}
 
 	links

@@ -2,27 +2,35 @@
 #include "pch.h"
 #include "Application.h"
 
+#include "glm/glm.hpp"
+
 #ifdef PSTC_PLATFORM_WINDOWS
 #include "Pistacio/Platform/Windows/WindowsWindow.h"
 #endif
 
 namespace Pistacio
 {
-  Application::Application() : imguiRenderer(ImGuiRenderer())
-  {
-    INIT_LOGGER
-    PSTC_CORE_INFO("Logger initialized!");
-    Init();
-  }
+  Application* Application::singletonInstance = nullptr;
 
-  void Application::Init() {
-    window = Window::Create({"CounterApp", 200, 40});
+  Application::Application(std::string appName, uint32_t width, uint32_t height) : imguiRenderer(ImGuiRenderer())
+  {
+    PSTC_CORE_ASSERT(!singletonInstance, "Application instance already created, only one instance allowed!");
+    singletonInstance = this;
+
+    INIT_LOGGER
+      PSTC_CORE_INFO("Logger initialized!");
+
+    window = Window::Create({ appName, width, height });
     window->SetEventCallback([this](Event& e) { OnEvent(e); });
 
     imguiRenderer.Init();
-
   }
-  
+
+
+  Application::Application(std::string appName) : Application(appName, 1080, 720)
+  {
+  }
+
   void Application::OnEvent(Event& e)
   {
     switch (e.GetEventType())
@@ -83,6 +91,11 @@ namespace Pistacio
     layerStack.PushOverlay(layer);
     layer->OnAttach();
   }
-}
 
+  Application* Application::Get()
+  {
+    return singletonInstance;
+  }
+
+}
 

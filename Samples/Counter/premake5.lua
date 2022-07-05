@@ -17,7 +17,8 @@ project "CounterApp"
 		"../../Pistacio/src",
 		"../../%{IncludeDir.glad}",
 		"../../%{IncludeDir.GLFW}",
-		"../../%{IncludeDir.ImGui}"
+		"../../%{IncludeDir.ImGui}",
+		"../../%{IncludeDir.glm}"
 	}
 
 	links

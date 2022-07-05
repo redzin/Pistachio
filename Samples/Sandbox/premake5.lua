@@ -15,9 +15,10 @@ project "Sandbox"
 	{
 		"%{wks.location}/Pistacio/vendor/spdlog/include",
 		"%{wks.location}/Pistacio/src",
-		"%{wks.location}/%{IncludeDir.glad}",
-		"%{wks.location}/%{IncludeDir.GLFW}",
-		"%{wks.location}/%{IncludeDir.ImGui}"
+		"%{IncludeDir.glad}",
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.glm}"
 	}
 
 	links

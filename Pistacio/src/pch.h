@@ -10,6 +10,7 @@
 #include <chrono>
 #include <thread>
 #include <filesystem>
+#include <optional>
 
 
 #include "Pistacio/Core/Core.h"

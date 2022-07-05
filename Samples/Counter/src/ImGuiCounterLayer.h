@@ -19,9 +19,8 @@ namespace Pistacio
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     bool keybindHasBeenReleased = true;
-    int counter = 0;
+    unsigned int counter = 0;
     int keybind = VK_F1;
-    
   };
 }
 
