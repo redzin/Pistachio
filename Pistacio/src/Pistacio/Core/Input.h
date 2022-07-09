@@ -195,8 +195,8 @@ namespace Pistacio::Input
 	static double GetMouseX();
 	static double GetMouseY();
 	static glm::dvec2 GetMousePos();
-}
 
+}
 
 template <>
 struct fmt::formatter<Pistacio::Input::KeyCode> : formatter<string_view>

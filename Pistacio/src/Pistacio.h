@@ -1,5 +1,10 @@
 #pragma once
 
 #include "Pistacio/Core/Application.h"
-#include "Pistacio/Logging/Log.h"
-#include "Pistacio/Events/Event.h"
+#include "Pistacio/Core/Log.h"
+#include "Pistacio/Core/Events.h"
+
+#ifdef PSTC_PLATFORM_WINDOWS
+#include "PistacioPlatform/OpenGL/Swapchain_OpenGL.h"
+#include "PistacioPlatform/OpenGL/ImGuiRenderer_GLFW_OpenGL.h"
+#endif

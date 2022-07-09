@@ -5,7 +5,6 @@
 namespace Pistacio
 {
 
-
   LayerStack::~LayerStack()
   {
     for (Layer* layer : Layers)

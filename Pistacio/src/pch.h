@@ -11,19 +11,22 @@
 #include <thread>
 #include <filesystem>
 #include <optional>
+#include <typeindex>
 
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 #include "Pistacio/Core/Core.h"
-#include "Pistacio/Logging/Log.h"
+#include "Pistacio/Core/Log.h"
 #include "Pistacio/Core/Input.h"
-#include "Pistacio/Events/Event.h"
+#include "Pistacio/Core/Events.h"
 #include "Pistacio/Core/Window.h"
-#include "Pistacio/Core/LayerStack.h"
-#include "Pistacio/Platform/OpenGL/ImGuiRenderer.h"
+#include "Pistacio/Core/Layers/LayerStack.h"
 
 
 #ifdef PSTC_PLATFORM_WINDOWS
-  #include <Windows.h>
+#include "PistacioPlatform/OpenGL/ImGuiRenderer_GLFW_OpenGL.h"
+#include <Windows.h>
 #endif
 
 

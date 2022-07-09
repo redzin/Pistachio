@@ -2,17 +2,12 @@
 #include "pch.h"
 #include "Application.h"
 
-#include "glm/glm.hpp"
-
-#ifdef PSTC_PLATFORM_WINDOWS
-#include "Pistacio/Platform/Windows/WindowsWindow.h"
-#endif
-
 namespace Pistacio
 {
+
   Application* Application::singletonInstance = nullptr;
 
-  Application::Application(std::string appName, uint32_t width, uint32_t height) : imguiRenderer(ImGuiRenderer())
+  Application::Application(std::string appName, uint32_t width, uint32_t height, bool windowHintFloat)
   {
     PSTC_CORE_ASSERT(!singletonInstance, "Application instance already created, only one instance allowed!");
     singletonInstance = this;
@@ -20,81 +15,90 @@ namespace Pistacio
     INIT_LOGGER
       PSTC_CORE_INFO("Logger initialized!");
 
-    window = Window::Create({ appName, width, height });
-    window->SetEventCallback([this](Event& e) { OnEvent(e); });
+    window = Window::Create(appName, width, height, windowHintFloat);
 
-    imguiRenderer.Init();
+    EventLibrary.Subscribe<WindowCloseEvent>([this](WindowCloseEvent& e)
+      {
+        return OnWindowCloseEvent();
+      });
+    EventLibrary.Subscribe<WindowResizeEvent>([this](WindowResizeEvent& e)
+      {
+        return OnWindowResizeEvent(e.width, e.height);
+      });
+    layerStack.reset(new LayerStack);
+    imguiRenderer.reset(ImGuiRenderer::Create());
   }
 
-
-  Application::Application(std::string appName) : Application(appName, 1080, 720)
+  Application::~Application()
   {
   }
 
-  void Application::OnEvent(Event& e)
+  Application::Application(std::string appName) : Application(appName, 1080, 720, false)
   {
-    switch (e.GetEventType())
-    {
-      case EventType::WindowCloseEvent:
-        PSTC_CORE_INFO("Exiting...");
-        app_running = false;
-        e.Handled = true;
-        break;
-      case EventType::WindowResizeEvent:
-        #ifdef PSTC_VERBOSE_DEBUG
-        WindowResizeEvent resizeEvent = reinterpret_cast<WindowResizeEvent&>(e);
-          PSTC_CORE_INFO("Resize to ({0}, {1})", resizeEvent.width, resizeEvent.height);
-        #endif
-        break;
-    }
+  }
 
-    for (auto iter = layerStack.rbegin(); iter < layerStack.rend(); iter++)
-    {
-      if (e.Handled) break;
-      static_cast<Layer*>(*iter)->OnEvent(e);
-    }
+  Application::Application(std::string appName, bool windowHintFloat) : Application(appName, 1080, 720, windowHintFloat)
+  {
+  }
+
+  bool Application::OnWindowCloseEvent()
+  {
+    PSTC_CORE_INFO("Exiting...");
+    app_running = false;
+    return false;
+  }
+
+  bool Application::OnWindowResizeEvent(int width, int height)
+  {
+    #ifdef PSTC_VERBOSE_DEBUG
+      PSTC_CORE_INFO("Resize to ({0}, {1})", width, height);
+    #endif
+    return true;
   }
 
   void Application::Run()
   {
     while (app_running)
     {
-
-      for (Layer* layer : layerStack)
+      for (auto layerIter = layerStack->rbegin(); layerIter != layerStack->rend(); layerIter++)
       {
-        layer->OnUpdate();
+        (*layerIter)->OnRender();
       }
 
-      imguiRenderer.BeginRender();
-
-      for (Layer* layer : layerStack)
+      imguiRenderer->BeginRender();
+      for (Layer* layer : *layerStack)
       {
         layer->OnGuiRender();
       }
+      imguiRenderer->EndRender();
 
-      imguiRenderer.EndRender();
-
-      window->OnUpdate();
+      window->Present();
 
     }
 
+    imguiRenderer.reset(nullptr); // make sure imgui is shutdown before the window
     window->Shutdown();
-    imguiRenderer.Cleanup();
   }
+
   void Application::PushLayer(Layer* layer)
   {
-    layerStack.PushLayer(layer);
+    layerStack->PushLayer(layer);
     layer->OnAttach();
   }
   void Application::PushOverlay(Layer* layer)
   {
-    layerStack.PushOverlay(layer);
+    layerStack->PushOverlay(layer);
     layer->OnAttach();
   }
 
   Application* Application::Get()
   {
     return singletonInstance;
+  }
+
+  EventLibrary& Application::GetEventLibrary()
+  {
+    return EventLibrary;
   }
 
 }

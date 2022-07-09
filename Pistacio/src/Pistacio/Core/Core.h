@@ -17,8 +17,8 @@
 #ifdef PSTC_DEBUG
 
   #define PSTC_DEBUGBREAK() __debugbreak();
-  #define PSTC_ASSERT(x, ...) if (!x) { PSTC_ERROR("Assertion failed: {0}", __VA_ARGS__); __debugbreak(); }
-  #define PSTC_CORE_ASSERT(x, ...) if (!x) { PSTC_CORE_ERROR("Assertion failed: {0}", __VA_ARGS__); __debugbreak(); }
+  #define PSTC_ASSERT(x, ...) if (!(x)) { PSTC_ERROR(__VA_ARGS__); __debugbreak(); }
+  #define PSTC_CORE_ASSERT(x, ...) if (!(x)) { PSTC_CORE_ERROR(__VA_ARGS__); __debugbreak(); }
 
 #else
 
