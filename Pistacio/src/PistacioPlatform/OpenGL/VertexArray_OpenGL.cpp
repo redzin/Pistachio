@@ -7,24 +7,19 @@ namespace Pistacio
 {
   VertexArray_OpenGL::VertexArray_OpenGL()
   {
-    glCreateVertexArrays(1, &RendererId);
+    glCreateVertexArrays(1, &m_RendererId);
   }
 
-  void VertexArray_OpenGL::Bind() const
+  const RendererID VertexArray_OpenGL::GetRendererID() const
   {
-    glBindVertexArray(RendererId);
+    return m_RendererId;
   }
 
-  void VertexArray_OpenGL::Unbind() const
-  {
-    glBindVertexArray(0);
-  }
-
-  void VertexArray_OpenGL::AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer)
+  void VertexArray_OpenGL::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
   {
 
-    glBindVertexArray(RendererId);
-    vertexBuffer->Bind();
+    glBindVertexArray(m_RendererId);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer->GetRendererID());
 
     int index = 0;
     BufferLayout layout = vertexBuffer->GetLayout();
@@ -42,27 +37,27 @@ namespace Pistacio
       index++;
     }
 
-    vertexBuffers.push_back(vertexBuffer);
+    m_VertexBuffers.push_back(vertexBuffer);
 
   }
 
-  void VertexArray_OpenGL::SetIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer)
+  void VertexArray_OpenGL::SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer)
   {
 
-    glBindVertexArray(RendererId);
-    indexBuffer->Bind();
-    this->indexBuffer = indexBuffer;
+    glBindVertexArray(m_RendererId);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer->GetRendererID());
+    this->m_IndexBuffer = indexBuffer;
 
   }
 
-  std::shared_ptr<IndexBuffer> VertexArray_OpenGL::GetIndexBuffer()
+  Ref<IndexBuffer> VertexArray_OpenGL::GetIndexBuffer()
   {
-      return indexBuffer;
+      return m_IndexBuffer;
   }
 
-  const std::vector<std::shared_ptr<VertexBuffer>>& VertexArray_OpenGL::GetVertexBuffers()
+  const std::vector<Ref<VertexBuffer>>& VertexArray_OpenGL::GetVertexBuffers()
   {
-    return vertexBuffers;
+    return m_VertexBuffers;
   }
 
 }

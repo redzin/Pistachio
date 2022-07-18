@@ -7,7 +7,13 @@
 #include "Pistacio/Rendering/VertexArray.h"
 #include "Pistacio/Rendering/Renderer.h"
 #include "Pistacio/Rendering/UniformBuffer.h"
-#include "Pistacio/Rendering/PerspectiveCamera.h"
+#include "Pistacio/Rendering/Texture.h"
+#include "Pistacio/Rendering/Framebuffer.h"
+#include "Pistacio/Rendering/Camera/PerspectiveCamera.h"
+#include "Pistacio/Rendering/Camera/CameraController_FPS.h"
+#include "Pistacio/Rendering/Camera/CameraController_Pan.h"
+#include "Pistacio/Rendering/Camera/CameraController_Zoom.h"
+#include "Pistacio/Rendering/Camera/CameraController_Orbit.h"
 
 namespace Pistacio
 {
@@ -19,23 +25,172 @@ namespace Pistacio
     ~Sandbox() {}
   };
 
-  struct NewClearColorEvent
-  {
-    glm::vec4 clear_color = glm::vec4(0.45f, 0.55f, 0.60f, 1.00f);
-  };
-
-  class SampleImGuiLayer : public Pistacio::Layer
+  class SampleTriangleLayer : public Layer
   {
   public:
-    SampleImGuiLayer() : eventLibrary(Pistacio::Application::Get()->GetEventLibrary()) { }
-    ~SampleImGuiLayer() = default;
+
+    bool vsync = Application::Get()->GetWindow().IsVSync();
+    ImVec4 imgui_clear_color = ImVec4(0.7f, 0.85f, 0.92f, 1.00f);
+    EventLibrary& eventLibrary;
+
+    glm::vec4 clear_color{ 0.65f, 0.88f, 0.92f, 1.00f };
+
+    float vertexAttributes[8 * 4] = {
+      -1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+       1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+       1.0f,  1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+      -1.0f,  1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f
+    };
+    unsigned int indices[6] = { 0, 1, 2, 2, 3, 0};
+
+    Ref<VertexBuffer> vertexBuffer;
+    Ref<IndexBuffer> indexBuffer;
+    Ref<VertexArray> vertexArray;
+    Ref<Texture2D> texture;
+    Ref<Texture2D> textureWithAlpha;
+    Ref<Framebuffer> framebuffer;
+    Ref<Framebuffer> presentbuffer;
+
+    Camera camera;
+    inline static constexpr float fovY = 70;
+    inline static constexpr float zNear = 0.1f;
+    inline static constexpr float zFar = 100.0f;
+    CameraController_Pan cameraControllerPan;
+    CameraController_Zoom cameraControllerZoom;
+    CameraController_Orbit cameraControllerOrbit;
 
     const char* GetName() const { return "SimpleImGuiLayer"; }
 
-    bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    ImVec4 old_clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    EventLibrary& eventLibrary;
+    SampleTriangleLayer(uint32_t width, uint32_t height) : eventLibrary(Pistacio::Application::Get()->GetEventLibrary())
+    {
+      //camera = PerspectiveCamera::Create(glm::vec3{ 0.0f, 0.0f, -0.5f }, glm::vec3{ 0.0f, 0.0f, 0.0f }, 45.0f, 1080, 720, 0.1f, 100.0f);
+      camera = CameraController_Orbit::CreateCamera(cameraControllerOrbit, glm::vec3(0), glm::vec3(0.0f, 0.0f, -1.0f), fovY, width, height, zNear, zFar);
+    }
+
+    void OnAttach() override
+    {
+      EventLibrary eventLib = Pistacio::Application::Get()->GetEventLibrary();
+      eventLib.Subscribe<MouseMoveEvent>([this](MouseMoveEvent e)
+        {
+          cameraControllerPan = CameraController_Pan::OnMouseMoveEvent(cameraControllerPan, e);
+          cameraControllerOrbit = CameraController_Orbit::OnMouseMoveEvent(cameraControllerOrbit, e);
+          return true;
+        }
+      );
+      eventLib.Subscribe<AppUpdateEvent>([this](AppUpdateEvent e)
+        {
+          std::tie(camera, cameraControllerPan) = CameraController_Pan::OnUpdate(camera, e.dt, cameraControllerPan);
+          std::tie(camera, cameraControllerOrbit) = CameraController_Orbit::OnUpdate(camera, e.dt, cameraControllerOrbit);
+          //std::tie(camera, cameraControllerZoom) = CameraController_Zoom::OnUpdate(camera, e.dt, cameraControllerZoom);
+          return true;
+        }
+      );
+      eventLib.Subscribe<MouseClickEvent>([this](MouseClickEvent e)
+        {
+          ImGuiIO guiIO = ImGui::GetIO();
+          if (!guiIO.WantCaptureMouse)
+          {
+            Window& window = Application::Get()->GetWindow();
+            if (e.action == Input::ButtonAction::KeyPressed && e.mouseKey == Input::MouseCode::ButtonRight)
+            {
+              // do not use for now
+              // cameraControllerPan = CameraController_Pan::Enable(cameraControllerPan);
+              window.HideCursor();
+            }
+            else if (e.action == Input::ButtonAction::KeyPressed && e.mouseKey == Input::MouseCode::ButtonLeft)
+            {
+              cameraControllerOrbit = CameraController_Orbit::Enable(cameraControllerOrbit);
+              window.HideCursor();
+            }
+            else if (e.action == Input::ButtonAction::KeyReleased && e.mouseKey == Input::MouseCode::ButtonRight)
+            {
+              cameraControllerPan = CameraController_Pan::Disable(cameraControllerPan);
+              window.ShowCursor();
+            }
+            else if (e.action == Input::ButtonAction::KeyReleased && e.mouseKey == Input::MouseCode::ButtonLeft)
+            {
+              cameraControllerOrbit = CameraController_Orbit::Disable(cameraControllerOrbit);
+              window.ShowCursor();
+            }
+          }
+          
+          return true;
+        }
+      );
+      eventLib.Subscribe<MouseScrollEvent>([this](MouseScrollEvent e)
+        {
+          cameraControllerOrbit = CameraController_Orbit::OnMouseScrollEvent(cameraControllerOrbit, e);
+          return true;
+        }
+      );
+      eventLib.Subscribe<WindowResizeEvent>([this](WindowResizeEvent e)
+        {
+          camera = PerspectiveCamera::NewPerspective(camera, fovY, e.width, e.height, zNear, zFar);
+          return true;
+        }
+      );
+
+
+      ShaderLibrary& shaderLibrary = Renderer::GetShaderLibrary();
+      shaderLibrary.Load("assets/shaders/TextureQuad.glsl");
+      shaderLibrary.Load("assets/shaders/TextureQuadCamera.glsl");
+      
+      // Create vertex attribute buffer
+      vertexBuffer = VertexBuffer::Create(vertexAttributes, sizeof(vertexAttributes));
+      BufferLayout vertexBufferLayout{
+        { BufferDataType::Float3, "a_Position" },
+        { BufferDataType::Float3, "a_Color" },
+        { BufferDataType::Float2, "a_TexCoord" }
+      };
+      vertexBuffer->SetLayout(vertexBufferLayout);
+      
+      //Create index buffer
+      indexBuffer = IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
+      
+      //Create vertex array
+      vertexArray = VertexArray::Create();
+      vertexArray->SetIndexBuffer(indexBuffer);
+      vertexArray->AddVertexBuffer(vertexBuffer);
+      
+      
+      TextureDescriptor textDesc;
+      textDesc.MagFilter = TextureFilter::Nearest;
+      textDesc.MinFilter = TextureFilter::Nearest;
+      texture = Texture2D::Create("assets/textures/Checkerboard.png", textDesc);
+      
+      textDesc.MagFilter = TextureFilter::Linear;
+      textDesc.MinFilter = TextureFilter::Linear;
+      textureWithAlpha = Texture2D::Create("assets/textures/ChernoLogo.png", textDesc);
+      
+      FramebufferDescriptor fbDesc;
+      fbDesc.Width = Application::Get()->GetWindow().GetWidth();
+      fbDesc.Height = Application::Get()->GetWindow().GetHeight();
+      framebuffer = Framebuffer::Create(fbDesc);
+      
+      fbDesc.IsSwapchainTarget = true;
+      presentbuffer = Framebuffer::Create(fbDesc);
+
+
+      PSTC_INFO("SampleTriangleLayer attached!");
+    }
+
+    void OnDetach() override
+    {
+      PSTC_INFO("SampleTriangleLayer detached!");
+    }
+
+    void OnRender() override
+    {
+      auto shader = Renderer::GetShaderLibrary().Get("TextureQuadCamera");
+      glm::mat4 transform(1);
+      
+      Renderer::BeginScene(camera, framebuffer, clear_color);
+      Renderer::Submit(shader, transform, vertexArray, texture);
+      Renderer::Submit(shader, glm::translate(transform, glm::vec3(0.0f, 0.0f, 0.5f)), vertexArray, textureWithAlpha);
+      Renderer::EndScene();
+      Renderer::Present(presentbuffer);
+
+    }
 
     void RenderImGuiDockspace()
     {
@@ -55,7 +210,7 @@ namespace Pistacio
       ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
       window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
       window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-    
+
       // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
       // and handle the pass-thru hole, so we ask Begin() to not render a background.
       if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
@@ -92,7 +247,7 @@ namespace Pistacio
           };
           ImGui::Separator();
           if (ImGui::MenuItem("Close", NULL, false, &open != NULL))
-            Application::Get()->GetEventLibrary().Publish<WindowCloseEvent>(std::make_shared<WindowCloseEvent>());
+            Application::Get()->GetEventLibrary().Publish<WindowCloseEvent>(std::move(WindowCloseEvent()));
           ImGui::EndMenu();
         }
         //ImGuiRenderer::HelpMarker("Helper text!");
@@ -106,190 +261,58 @@ namespace Pistacio
     void OnGuiRender() override
     {
 
+      //ImGui::ShowDemoWindow();
+
       RenderImGuiDockspace();
 
-      //ImGui::ShowDemoWindow(&open);
+      ImGui::Begin("Pistacio Controls Panel");
 
-      bool open = true;
-      const char* windowName = "Pistacio Controls Panel";
+      ImGui::Checkbox("VSync", &vsync);
 
-      // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-      {
-        static float f = 0.0f;
-        static int counter = 0;
+      if (vsync != Application::Get()->GetWindow().IsVSync())
+        Application::Get()->GetWindow().SetVSync(vsync);
 
-        ImGui::Begin(windowName);                          // Create a window called "Hello, world!" and append into it.
+      //static float f = 0.0f;
+      //ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 
-        ImGui::Text("The Pistacio editor.");               // Display some text (you can use a format strings too)
-        ImGui::Checkbox("Another Window", &show_another_window);
+      ImGui::ColorEdit3("clear color", (float*)&imgui_clear_color); // Edit 3 floats representing a color
+      clear_color.x = imgui_clear_color.x;
+      clear_color.y = imgui_clear_color.y;
+      clear_color.z = imgui_clear_color.z;
+      clear_color.w = imgui_clear_color.w;
 
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+      ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+      ImGui::Text("Primary camera location: (%.2f, %.2f, %.2f)", camera.position.x, camera.position.y, camera.position.z);
+      ImGui::End();
 
-        ImVec4 old_clear_color = clear_color;
-        ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-        if (old_clear_color.x != clear_color.x || old_clear_color.y != clear_color.y || old_clear_color.z != clear_color.z || old_clear_color.w != clear_color.w)
-        {
-          old_clear_color = clear_color;
-          std::shared_ptr<NewClearColorEvent> e = std::shared_ptr<NewClearColorEvent>(new NewClearColorEvent{ glm::vec4(clear_color.x, clear_color.y, clear_color.z, clear_color.w) });
-          eventLibrary.Publish(e);
-        }
-
-        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-          counter++;
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
-
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        ImGui::End();
-      }
-
-    }
-
-    void OnAttach() override
-    {
-      PSTC_INFO("SampleImGuiLayer attached!");
-    }
-
-    void OnDetach() override
-    {
-      PSTC_INFO("SampleImGuiLayer detached!");
-    }
-
-  };
-
-  class SampleTriangleLayer : public Pistacio::Layer
-  {
-  public:
-    glm::vec4 clear_color{ 0.45f, 0.55f, 0.60f, 1.00f };
-
-    float vertexAttributes[6 * 3] = {
-      -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-       0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-       0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f
-    };
-    unsigned int indices[3] = { 0, 1 ,2 };
-
-
-    std::shared_ptr<UniformBuffer> uniformBuffer;
-    std::shared_ptr<VertexBuffer> vertexBuffer;
-    std::shared_ptr<IndexBuffer> indexBuffer;
-    std::shared_ptr<VertexArray> vertexArray;
-    std::shared_ptr<Shader> shader;
-    std::shared_ptr<PerspectiveCamera> camera;
-
-    const char* GetName() const { return "SimpleImGuiLayer"; }
-
-    std::chrono::steady_clock::time_point start;
-
-    void OnAttach() override
-    {
-      Pistacio::Application::Get()->GetEventLibrary().Subscribe<NewClearColorEvent>([this](NewClearColorEvent& e) { clear_color = e.clear_color; return true; });
-
-      std::string vertexSrc =
-        R"(
-#version 430 core
-
-layout(std140, binding = 0) uniform CameraData
-{
-  mat4 view;
-  mat4 projection;
-};
-
-layout(location = 0) in vec3 a_Position;
-layout(location = 1) in vec3 a_Color;
-
-layout(location = 0) out vec3 out_color;
-
-void main()
-{
-  out_color = a_Color;
-  gl_Position = projection * view * vec4(a_Position, 1.0);
-}
-)";
-
-      std::string fragmentSrc =
-        R"(
-#version 430 core
-
-layout(location = 0) in vec3 in_color;
-
-out vec4 out_color;
-
-void main()
-{
-  out_color = vec4((in_color), 1.0);
-}
-)";
-
-      shader.reset(Shader::Create(vertexSrc, fragmentSrc));
-      shader->Bind();
-
-      // Create vertex attribute buffer
-      vertexBuffer.reset(VertexBuffer::Create(vertexAttributes, sizeof(vertexAttributes)));
-      BufferLayout vertexBufferLayout{
-        { BufferDataType::Float3, "a_Position" },
-        { BufferDataType::Float3, "a_Color" }
-      };
-      vertexBuffer->SetLayout(vertexBufferLayout);
-
-      //Create index buffer
-      indexBuffer.reset(IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
-
-      //Create vertex array
-      vertexArray.reset(VertexArray::Create());
-      vertexArray->SetIndexBuffer(indexBuffer);
-      vertexArray->AddVertexBuffer(vertexBuffer);
-
-      vertexArray->Unbind();
-
-      uniformBuffer.reset(UniformBuffer::Create(4*4*4*2, 0));
-
-      start = std::chrono::steady_clock::now();
-      camera.reset(new PerspectiveCamera(
-        glm::vec3(0.75f, 0.0f, -0.5f),
-        glm::vec3(0.75f, 0.0f, 0.0f),
-        45.0f, 1080, 720, 1.0f, 100.0f
-      ));
-
-      PSTC_INFO("SampleTriangleLayer attached!");
-    }
-
-    void OnDetach() override
-    {
-      PSTC_INFO("SampleTriangleLayer detached!");
-    }
-
-    void OnRender() override
-    {
+      ImGui::Begin("Viewport");
+      ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+      TextureDescriptor colorTextDesc = framebuffer->GetColorAttachment()->GetDescriptor();
       
-      RenderCommand::SetClearColor(clear_color);
-      RenderCommand::Clear();
-      
-      Renderer::BeginScene();
-      shader->Bind();
+      //if (ImGui::IsWindowHovered() && ImGui::IsItemHovered())
+      //  PSTC_CORE_INFO("Window hovered!");
 
-
-      auto time_step = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
-      //uboData.offset.x = std::sin((double)time_step.count() / 1000) / 2;
-
-      uniformBuffer->SetData(camera->GetDataPtr(), 4*4*4*2, 0);
-
-      Renderer::Submit(vertexArray);
+      ImGui::Image((void*)framebuffer->GetColorAttachment()->GetRendererID(), ImVec2(colorTextDesc.Width, colorTextDesc.Height), ImVec2(0, 1), ImVec2(1, 0));
+      ImGui::End();
 
     }
-
   };
 
   Pistacio::Application* Pistacio::ApplicationFactory::doCreate()
   {
     Sandbox* sandbox = new Sandbox("Sandbox App", 1080, 720);
-    SampleImGuiLayer* sampleImGuiLayer = new SampleImGuiLayer();
-    SampleTriangleLayer* sampleTriangleLayer = new SampleTriangleLayer();
 
-    sandbox->GetEventLibrary().Register<NewClearColorEvent>();
-    sandbox->PushLayer(sampleTriangleLayer);
-    sandbox->PushOverlay(sampleImGuiLayer);
+    SampleTriangleLayer* sampleTriangleLayer = new SampleTriangleLayer(1080, 720);
+
+    Application::Get()->GetEventLibrary().Subscribe<KeyEvent>([](KeyEvent e)
+      {
+        if (e.key == Input::KeyCode::Escape && e.action == Input::ButtonAction::KeyPressed)
+          Application::Get()->GetEventLibrary().Publish<WindowCloseEvent>(WindowCloseEvent{});
+        return true;
+      }
+    );
+
+    sandbox->AddLayer(sampleTriangleLayer);
 
     return sandbox;
   }

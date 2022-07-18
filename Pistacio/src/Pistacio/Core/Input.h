@@ -190,11 +190,6 @@ namespace Pistacio::Input
 		Menu = 348
 	};
 
-	static bool IsKeyPressed(KeyCode code);
-	static bool IsMouseButtonPressed(Pistacio::Input::MouseCode code);
-	static double GetMouseX();
-	static double GetMouseY();
-	static glm::dvec2 GetMousePos();
 
 }
 

@@ -1,6 +1,5 @@
 #pragma once
 #include "pch.h"
-#include "Renderer.h"
 
 namespace Pistacio
 {
@@ -112,12 +111,11 @@ namespace Pistacio
   {
   public:
     virtual ~VertexBuffer() {}
-    virtual void Bind() const = 0;
-    virtual void Unbind() const = 0;
+    virtual const RendererID GetRendererID() const = 0;
     virtual void SetLayout(BufferLayout layout) = 0;
     virtual const BufferLayout& GetLayout() const = 0;
 
-    static VertexBuffer* Create(float* vertices, uint32_t size);
+    static Ref<VertexBuffer> Create(float* vertices, uint32_t size);
   };
 
   // Index Buffer //////////////////////////////////////////////////
@@ -125,10 +123,9 @@ namespace Pistacio
   {
   public:
     virtual ~IndexBuffer() {}
-    virtual void Bind() const = 0;
-    virtual void Unbind() const = 0;
+    virtual const RendererID GetRendererID() const = 0;
     virtual uint32_t GetCount() const = 0;
 
-    static IndexBuffer* Create(uint32_t* vertices, uint32_t size);
+    static Ref<IndexBuffer> Create(uint32_t* vertices, uint32_t size);
   };
 }

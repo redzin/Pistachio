@@ -16,6 +16,7 @@ IncludeDir["GLFW"] = "%{wks.location}/Pistacio/vendor/GLFW/GLFW/include"
 IncludeDir["glad"] = "%{wks.location}/Pistacio/vendor/glad/glad/include"
 IncludeDir["ImGui"] = "%{wks.location}/Pistacio/vendor/ImGui/ImGui"
 IncludeDir["glm"] = "%{wks.location}/Pistacio/vendor/glm"
+IncludeDir["stb_image"] = "%{wks.location}/Pistacio/vendor/stb_image"
 
 project "Pistacio"
 	location "Pistacio"
@@ -34,7 +35,9 @@ project "Pistacio"
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
 		"%{prj.name}/vendor/glm/glm/**.hpp",
-		"%{prj.name}/vendor/glm/glm/**.inl"
+		"%{prj.name}/vendor/glm/glm/**.inl",
+		"%{prj.name}/vendor/stb_image/**.h",
+		"%{prj.name}/vendor/stb_image/**.cpp"
 		
 	}
 
@@ -45,7 +48,8 @@ project "Pistacio"
 		"%{IncludeDir.glad}",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.stb_image}"
 	}
 
 	links
@@ -92,6 +96,7 @@ project "Pistacio"
 include "Pistacio/vendor/GLFW"
 include "Pistacio/vendor/glad"
 include "Pistacio/vendor/ImGui"
+include "Pistacio/vendor/tinygltf"
 
 include "Samples/Counter"
 include "Samples/Sandbox"

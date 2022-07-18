@@ -1,21 +1,39 @@
 #pragma once
 
+// Meta
+#include <typeindex>
+
+// IO
 #include <stdio.h>
+#include <iostream>
+#include <filesystem>
+#include <stdexcept>
+
+// Memory
 #include <memory>
+
+// Algorithms & Data Structures
 #include <algorithm>
 #include <map>
 #include <functional>
-#include <spdlog/spdlog.h>
-#include <stdexcept>
 #include <chrono>
-#include <thread>
-#include <filesystem>
 #include <optional>
-#include <typeindex>
+#include <tuple>
+#include <array>
 
+//Concurrency
+#include <thread>
+
+// Logging
+#include <spdlog/spdlog.h>
+
+// Math
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
+// Pistacio
+using RendererID = unsigned int;
+#include "Pistacio/Utilities/FilesystemUtilities.h"
 #include "Pistacio/Core/Core.h"
 #include "Pistacio/Core/Log.h"
 #include "Pistacio/Core/Input.h"

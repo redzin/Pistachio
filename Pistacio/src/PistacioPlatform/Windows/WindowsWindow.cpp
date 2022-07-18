@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "WindowsWindow.h"
-#include "WindowsInput.cpp"
 
 #include "PistacioPlatform/OpenGL/Swapchain_OpenGL.h"
 
@@ -64,18 +63,17 @@ namespace Pistacio
       Application::Get()->GetEventLibrary().Register<WindowResizeEvent>();
       Application::Get()->GetEventLibrary().Register<KeyEvent>();
       Application::Get()->GetEventLibrary().Register<MouseClickEvent>();
+      Application::Get()->GetEventLibrary().Register<MouseScrollEvent>();
       Application::Get()->GetEventLibrary().Register<MouseMoveEvent>();
 
       glfwSetWindowCloseCallback(glfwWindow, [](GLFWwindow* glfwWindow)
         {
-          std::shared_ptr<WindowCloseEvent> e  = std::shared_ptr<WindowCloseEvent>(new WindowCloseEvent());
-          Application::Get()->GetEventLibrary().Publish<WindowCloseEvent>(e);
+          Application::Get()->GetEventLibrary().Publish<WindowCloseEvent>(std::move(WindowCloseEvent()));
         });
 
       glfwSetWindowSizeCallback(glfwWindow, [](GLFWwindow* glfwWindow, int width, int height)
         {
-          std::shared_ptr<WindowResizeEvent> e = std::shared_ptr<WindowResizeEvent>(new WindowResizeEvent{ width, height });
-          Application::Get()->GetEventLibrary().Publish<WindowResizeEvent>(e);
+          Application::Get()->GetEventLibrary().Publish<WindowResizeEvent>(std::move(WindowResizeEvent{ width, height }));
         });
       
 
@@ -83,29 +81,28 @@ namespace Pistacio
         {
           int modFlags = ConvertGLFWModToPistacioMod(mods);
           
-          std::shared_ptr<KeyEvent> e = std::shared_ptr<KeyEvent>(new KeyEvent
-            {
-              action == GLFW_PRESS ? Input::ButtonAction::KeyPressed : action == GLFW_RELEASE ? Input::ButtonAction::KeyReleased : Input::ButtonAction::KeyRepeated,
-              static_cast<Input::KeyCode>(key),
-              modFlags
-            }
-          );
+          KeyEvent e
+          {
+            action == GLFW_PRESS ? Input::ButtonAction::KeyPressed : action == GLFW_RELEASE ? Input::ButtonAction::KeyReleased : Input::ButtonAction::KeyRepeated,
+            static_cast<Input::KeyCode>(key),
+            modFlags
+          };
 
           #ifdef PSTC_VERBOSE_DEBUG
-            PSTC_CORE_TRACE("KeyEvent: ({0}, {1}, {2})", e->action, e->key, Input::KeyModFlagToString(e->modFlags));
+            PSTC_CORE_TRACE("KeyEvent: ({0}, {1}, {2})", e.action, e.key, Input::KeyModFlagToString(e.modFlags));
           #endif
 
-          Application::Get()->GetEventLibrary().Publish<KeyEvent>(e);
+          Application::Get()->GetEventLibrary().Publish<KeyEvent>(std::move(e));
         }
       );
 
       glfwSetCursorPosCallback(glfwWindow, [](GLFWwindow* glfwWindow, double x, double y)
         {
-          std::shared_ptr<MouseMoveEvent> e = std::shared_ptr<MouseMoveEvent>(new MouseMoveEvent{ x, y });
-          #ifdef PSTC_VERBOSE_DEBUG
-            PSTC_CORE_TRACE("MousePos: ({0}, {1})", e->x, e->y);
+          MouseMoveEvent e { x, y };
+          #ifdef PSTC_EXTREMELY_VERBOSE_DEBUG
+            PSTC_CORE_TRACE("MousePos: ({0}, {1})", e.x, e.y);
           #endif
-          Application::Get()->GetEventLibrary().Publish<MouseMoveEvent>(e);
+          Application::Get()->GetEventLibrary().Publish<MouseMoveEvent>(std::move(e));
         }
       );
 
@@ -113,17 +110,29 @@ namespace Pistacio
         {
           int modFlags = ConvertGLFWModToPistacioMod(mods);
 
-          std::shared_ptr<MouseClickEvent> e = std::shared_ptr<MouseClickEvent>(new MouseClickEvent {
+          MouseClickEvent e {
             action == GLFW_PRESS ? Input::ButtonAction::KeyPressed : action == GLFW_RELEASE ? Input::ButtonAction::KeyReleased : Input::ButtonAction::KeyRepeated,
             static_cast<Input::MouseCode>(button),
             modFlags
-          });
+          };
 
           #ifdef PSTC_VERBOSE_DEBUG
-            PSTC_CORE_TRACE("MouseClickEvent: ({0}, {1})", e->action, e->mouseKey, Input::KeyModFlagToString(e->modFlags));
+            PSTC_CORE_TRACE("MouseClickEvent: ({0}, {1}, {2})", e.action, e.mouseKey, Input::KeyModFlagToString(e.modFlags));
           #endif
 
-          Application::Get()->GetEventLibrary().Publish<MouseClickEvent>(e);
+          Application::Get()->GetEventLibrary().Publish<MouseClickEvent>(std::move(e));
+        }
+      );
+
+      glfwSetScrollCallback(glfwWindow, [](GLFWwindow* window, double xoffset, double yoffset)
+        {
+          MouseScrollEvent e{ xoffset, yoffset };
+
+          #ifdef PSTC_VERBOSE_DEBUG
+            PSTC_CORE_TRACE("MouseScrollEvent: ({0}, {1})", e.xoffset, e.yoffset);
+          #endif
+
+          Application::Get()->GetEventLibrary().Publish<MouseScrollEvent>(std::move(e));
         }
       );
     }
@@ -135,10 +144,62 @@ namespace Pistacio
     glfwTerminate();
   }
 
-  void WindowsWindow::Present()
+  void WindowsWindow::PollUIEvents()
   {
     glfwPollEvents();
+  }
+
+  void WindowsWindow::Present()
+  {
     swapchain->SwapBuffers();
+  }
+
+  void Pistacio::WindowsWindow::HideCursor()
+  {
+    glfwSetInputMode(glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    if (glfwRawMouseMotionSupported())
+      glfwSetInputMode(glfwWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+  }
+
+  void Pistacio::WindowsWindow::ShowCursor()
+  {
+
+    glfwSetInputMode(glfwWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    if (glfwRawMouseMotionSupported())
+      glfwSetInputMode(glfwWindow, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+
+  }
+
+  bool WindowsWindow::IsKeyPressed(Input::KeyCode code) const
+  {
+    GLFWwindow* glfwWindow = glfwGetCurrentContext();
+    int state = glfwGetKey(glfwWindow, static_cast<uint16_t>(code));
+    return state == (GLFW_PRESS | GLFW_REPEAT);
+  }
+
+  bool WindowsWindow::IsMouseButtonPressed(Input::MouseCode code) const
+  {
+    GLFWwindow* glfwWindow = glfwGetCurrentContext();
+    int state = glfwGetMouseButton(glfwWindow, static_cast<uint16_t>(code));
+    return state == (GLFW_PRESS | GLFW_REPEAT);
+  }
+
+  glm::dvec2 WindowsWindow::GetMousePos() const
+  {
+    GLFWwindow* glfwWindow = glfwGetCurrentContext();
+    glm::dvec2 pos;
+    glfwGetCursorPos(glfwWindow, &pos.x, &pos.y);
+    return pos;
+  }
+
+  double WindowsWindow::GetMouseX() const
+  {
+    return GetMousePos().x;
+  }
+
+  double WindowsWindow::GetMouseY() const
+  {
+    return GetMousePos().y;
   }
 
   void WindowsWindow::SetVSync(bool enabled)

@@ -30,17 +30,16 @@ namespace Pistacio
   public:
     VertexArray_OpenGL();
     virtual ~VertexArray_OpenGL() {}
-    virtual void Bind() const override;
-    virtual void Unbind() const override;
-    virtual void AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer) override;
-    virtual void SetIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer) override;
-    virtual std::shared_ptr<IndexBuffer> GetIndexBuffer();
-    virtual const std::vector<std::shared_ptr<VertexBuffer>>& GetVertexBuffers();
+    const RendererID GetRendererID() const override;
+    void AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer) override;
+    void SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer) override;
+    Ref<IndexBuffer> GetIndexBuffer();
+    const std::vector<Ref<VertexBuffer>>& GetVertexBuffers();
 
   private:
-    unsigned int RendererId;
-    std::vector<std::shared_ptr<VertexBuffer>> vertexBuffers;
-    std::shared_ptr<IndexBuffer> indexBuffer;
+    RendererID m_RendererId;
+    std::vector<Ref<VertexBuffer>> m_VertexBuffers;
+    Ref<IndexBuffer> m_IndexBuffer;
   };
 
 }

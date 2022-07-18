@@ -7,7 +7,7 @@ namespace Pistacio
 {
 
   // Vertex Buffer //////////////////////////////////////////////////
-  VertexBuffer* Pistacio::VertexBuffer::Create(float* vertices, uint32_t size)
+  Ref<VertexBuffer> Pistacio::VertexBuffer::Create(float* vertices, uint32_t size)
   {
     switch (RendererAPI::GetAPI())
     {
@@ -15,7 +15,9 @@ namespace Pistacio
       PSTC_CORE_ASSERT(false, "No renderer API selected!");
       return nullptr;
     case RendererAPI::API::OpenGL:
-      return new VertexBuffer_OpenGL(vertices, size);
+      Ref<VertexBuffer> ref;
+      ref.reset(new VertexBuffer_OpenGL(vertices, size));
+      return ref;
     }
 
     PSTC_CORE_ASSERT(false, "Unknown API selected!");
@@ -23,7 +25,7 @@ namespace Pistacio
   }
 
   // Index Buffer //////////////////////////////////////////////////
-  IndexBuffer* IndexBuffer::Create(uint32_t* vertices, uint32_t size)
+  Ref<IndexBuffer> IndexBuffer::Create(uint32_t* vertices, uint32_t size)
   {
     switch (RendererAPI::GetAPI())
     {
@@ -31,7 +33,9 @@ namespace Pistacio
       PSTC_CORE_ASSERT(false, "No renderer API selected!");
       return nullptr;
     case RendererAPI::API::OpenGL:
-      return new IndexBuffer_OpenGL(vertices, size);
+      Ref<IndexBuffer> ref;
+      ref.reset(new IndexBuffer_OpenGL(vertices, size));
+      return ref;
     }
 
     PSTC_CORE_ASSERT(false, "Unknown API selected!");

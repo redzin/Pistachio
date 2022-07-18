@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "Application.h"
 
+
 namespace Pistacio
 {
 
@@ -16,17 +17,32 @@ namespace Pistacio
       PSTC_CORE_INFO("Logger initialized!");
 
     window = Window::Create(appName, width, height, windowHintFloat);
+    window->SetVSync(false);
 
-    EventLibrary.Subscribe<WindowCloseEvent>([this](WindowCloseEvent& e)
+    EventLibrary.Subscribe<WindowCloseEvent>([this](WindowCloseEvent e)
       {
         return OnWindowCloseEvent();
       });
-    EventLibrary.Subscribe<WindowResizeEvent>([this](WindowResizeEvent& e)
+    EventLibrary.Subscribe<WindowResizeEvent>([this](WindowResizeEvent e)
       {
         return OnWindowResizeEvent(e.width, e.height);
       });
     layerStack.reset(new LayerStack);
     imguiRenderer.reset(ImGuiRenderer::Create());
+    Renderer::Init();
+    EventLibrary.Register<AppUpdateEvent>();
+
+#ifdef PSTC_DEBUG
+    EventLibrary.Subscribe<KeyEvent>([](KeyEvent e)
+      {
+        if (e.key == Input::KeyCode::P && e.action == Input::ButtonAction::KeyPressed)
+        {
+          PSTC_CORE_INFO("Exeution paused, press Enter to resume...");
+          std::cin.get();
+        }
+        return true;
+      });
+#endif
   }
 
   Application::~Application()
@@ -53,13 +69,24 @@ namespace Pistacio
     #ifdef PSTC_VERBOSE_DEBUG
       PSTC_CORE_INFO("Resize to ({0}, {1})", width, height);
     #endif
+    Renderer::SetViewport(0,0,width,height);
     return true;
   }
 
   void Application::Run()
   {
+    //Run loop
     while (app_running)
     {
+
+      std::chrono::time_point start = std::chrono::steady_clock::now();
+
+      window->PollUIEvents();
+
+      // Consider refactoring events with ECS according to:
+      // https://gamedev.stackexchange.com/questions/141636/event-handling-in-pure-entity-component-systems-is-this-approach-correct
+      EventLibrary.Publish(AppUpdateEvent{ lastFrameTime });
+
       for (auto layerIter = layerStack->rbegin(); layerIter != layerStack->rend(); layerIter++)
       {
         (*layerIter)->OnRender();
@@ -70,22 +97,24 @@ namespace Pistacio
       {
         layer->OnGuiRender();
       }
+
       imguiRenderer->EndRender();
 
       window->Present();
 
+      lastFrameTime = std::chrono::steady_clock::now() - start;
     }
 
     imguiRenderer.reset(nullptr); // make sure imgui is shutdown before the window
     window->Shutdown();
   }
 
-  void Application::PushLayer(Layer* layer)
+  void Application::AddLayer(Layer* layer)
   {
     layerStack->PushLayer(layer);
     layer->OnAttach();
   }
-  void Application::PushOverlay(Layer* layer)
+  void Application::AddOverlay(Layer* layer)
   {
     layerStack->PushOverlay(layer);
     layer->OnAttach();
@@ -99,6 +128,11 @@ namespace Pistacio
   EventLibrary& Application::GetEventLibrary()
   {
     return EventLibrary;
+  }
+
+  Window& Application::GetWindow()
+  {
+    return *window;
   }
 
 }

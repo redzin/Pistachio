@@ -3,13 +3,17 @@
 #include "pch.h"
 #include "Core.h"
 
+#include "Pistacio/Rendering/Camera/Camera.h"
+
 #ifdef PSTC_PLATFORM_WINDOWS
 #include "PistacioPlatform/Windows/WindowsWindow.h"
 #endif
 
+using namespace std::literals::chrono_literals;
+
 namespace Pistacio {
   
-  class PSTC_API Application
+  class Application
   {
   public:
     Application(std::string appName);
@@ -19,11 +23,12 @@ namespace Pistacio {
     ~Application();
 
     void Run();
-    void PushLayer(Layer* layer);
-    void PushOverlay(Layer* layer);
+    void AddLayer(Layer* layer);
+    void AddOverlay(Layer* layer);
+    EventLibrary& GetEventLibrary();
+    Window& GetWindow();
 
     static Application* Get();
-    EventLibrary& GetEventLibrary();
 
   private:
     EventLibrary EventLibrary;
@@ -34,6 +39,8 @@ namespace Pistacio {
     std::unique_ptr<Window> window;
     std::unique_ptr<LayerStack> layerStack;
     std::unique_ptr<ImGuiRenderer> imguiRenderer;
+
+    std::chrono::steady_clock::duration lastFrameTime = 6ms;
 
     static Application* singletonInstance;
   };
@@ -47,7 +54,12 @@ namespace Pistacio {
     }
 
   private:
-    static PSTC_API Application* doCreate();
+    static Application* doCreate();
+  };
+
+  struct AppUpdateEvent
+  {
+    std::chrono::steady_clock::duration dt;
   };
 
 }

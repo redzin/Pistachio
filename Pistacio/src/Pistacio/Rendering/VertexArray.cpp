@@ -6,7 +6,7 @@
 namespace Pistacio
 {
 
-  VertexArray* Pistacio::VertexArray::Create()
+  Ref<VertexArray> Pistacio::VertexArray::Create()
   {
     switch (RendererAPI::GetAPI())
     {
@@ -14,7 +14,9 @@ namespace Pistacio
       PSTC_CORE_ASSERT(false, "No renderer API selected!");
       return nullptr;
     case RendererAPI::API::OpenGL:
-      return new VertexArray_OpenGL();
+      Ref<VertexArray> ref;
+      ref.reset(new VertexArray_OpenGL());
+      return ref;
     }
 
     PSTC_CORE_ASSERT(false, "Unknown API selected!");
