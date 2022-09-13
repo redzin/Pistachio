@@ -1,7 +1,6 @@
 #pragma once
 
 #include "pch.h"
-#include "Layer.h"
 
 namespace Pistacio
 {
@@ -14,8 +13,8 @@ namespace Pistacio
 
     void PushLayer(Layer* layer);
     void PushOverlay(Layer* layer);
-    void PopOverlay(Layer* layer);
-    void PopLayer(Layer* layer);
+    void PopOverlay(Layer* layer, Window& window, EventLibrary& eventLib);
+    void PopLayer(Layer* layer, Window& window, EventLibrary& eventLib);
 
     std::vector<Layer*>::iterator begin() { return Layers.begin(); }
     std::vector<Layer*>::iterator end() { return Layers.end(); }

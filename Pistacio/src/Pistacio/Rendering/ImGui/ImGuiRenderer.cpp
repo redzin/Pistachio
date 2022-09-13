@@ -5,20 +5,21 @@
 
 namespace Pistacio
 {
-  ImGuiRenderer* ImGuiRenderer::Create()
+  Scope<ImGuiRenderer> ImGuiRenderer::Create()
   {
-    switch (RendererAPI::GetAPI())
+    switch (RenderingAPI::GetAPI())
     {
-    case RendererAPI::API::None():
+    case RenderingAPI::API::None():
       PSTC_CORE_ASSERT(false, "No renderer API selected!");
       return nullptr;
-    case RendererAPI::API::OpenGL:
-      return new ImGuiRenderer_GLFW_OpenGL();
+    case RenderingAPI::API::OpenGL:
+      return Scope<ImGuiRenderer>(new ImGuiRenderer_GLFW_OpenGL());
     }
 
     PSTC_CORE_ASSERT(false, "Unknown API selected!");
     return nullptr;
   }
+
   void ImGuiRenderer::HelpMarker(const char* desc)
   {
     ImGui::TextDisabled("(?)");

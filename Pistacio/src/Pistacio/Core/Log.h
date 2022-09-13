@@ -3,16 +3,16 @@
 #include "pch.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
-#if defined(PSTC_DEBUG)
+#ifdef PSTC_DEBUG
 
 namespace Pistacio::Logger {
 
-  void PSTC_API Init();
-  std::shared_ptr<spdlog::logger> PSTC_API GetCoreLogger();
-  std::shared_ptr<spdlog::logger> PSTC_API GetClientLogger();
+  void Init();
+  Ref<spdlog::logger> GetCoreLogger();
+  Ref<spdlog::logger> GetClientLogger();
 }
 
-#define INIT_LOGGER Logger::Init();
+#define INIT_LOGGER() Logger::Init();
 
 #define PSTC_TRACE(...) Pistacio::Logger::GetClientLogger()->trace(__VA_ARGS__)
 #define PSTC_INFO(...) Pistacio::Logger::GetClientLogger()->info(__VA_ARGS__)

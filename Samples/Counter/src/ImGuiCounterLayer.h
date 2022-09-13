@@ -11,9 +11,8 @@ namespace Pistacio
     ~ImGuiCounterLayer() = default;
     void OnAttach() override;
     void OnDetach() override;
-    void OnEvent(Event& e) override;
-    void OnUpdate() override;
     void OnGuiRender() override;
+    const char* GetName() const override;
 
   private:
 
@@ -21,6 +20,7 @@ namespace Pistacio
     bool keybindHasBeenReleased = true;
     unsigned int counter = 0;
     int keybind = VK_F1;
+
   };
 }
 

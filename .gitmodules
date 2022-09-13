@@ -10,3 +10,9 @@
 [submodule "Pistacio/vendor/tinygltf/tinygltf"]
 	path = Pistacio/vendor/tinygltf/tinygltf
 	url = https://github.com/syoyo/tinygltf.git
+[submodule "Pistacio/vendor/entt"]
+	path = Pistacio/vendor/entt
+	url = https://github.com/skypjack/entt.git
+[submodule "Pistacio/vendor/json"]
+	path = Pistacio/vendor/json
+	url = https://github.com/nlohmann/json.git

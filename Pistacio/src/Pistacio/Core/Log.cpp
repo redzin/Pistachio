@@ -5,29 +5,28 @@
 
 namespace Pistacio::Logger {
 
-  std::shared_ptr<spdlog::logger> s_CoreLogger;
-  std::shared_ptr<spdlog::logger> s_ClientLogger;
+  Ref<spdlog::logger> s_CoreLogger;
+  Ref<spdlog::logger> s_ClientLogger;
 
-}
+  void Pistacio::Logger::Init()
+  {
+    spdlog::set_pattern("%^[%T] %n: %v%$");
+    s_CoreLogger = spdlog::stdout_color_mt("Pistacio");
+    s_CoreLogger->set_level(spdlog::level::trace);
 
-void Pistacio::Logger::Init()
-{
-  spdlog::set_pattern("%^[%T] %n: %v%$");
-  s_CoreLogger = spdlog::stdout_color_mt("Pistacio");
-  s_CoreLogger->set_level(spdlog::level::trace);
+    s_ClientLogger = spdlog::stdout_color_mt("APP");
+    s_ClientLogger->set_level(spdlog::level::trace);
+  }
 
-  s_ClientLogger = spdlog::stdout_color_mt("APP");
-  s_ClientLogger->set_level(spdlog::level::trace);
-}
+  Ref<spdlog::logger> GetCoreLogger()
+  {
+    return s_CoreLogger;
+  }
 
-std::shared_ptr<spdlog::logger> Pistacio::Logger::GetCoreLogger()
-{
-  return s_CoreLogger;
-}
-
-std::shared_ptr<spdlog::logger> Pistacio::Logger::GetClientLogger()
-{
-  return s_ClientLogger;
+  Ref<spdlog::logger> GetClientLogger()
+  {
+    return s_ClientLogger;
+  }
 }
 
 #endif

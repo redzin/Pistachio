@@ -3,10 +3,7 @@
 
 namespace Pistacio
 {
-
-  class EventPublisherBase
-  {
-  };
+  using EventConsumed = bool;
 
   class Subscription
   {
@@ -24,9 +21,9 @@ namespace Pistacio
   };
 
   template <typename EventType>
-  class EventPublisher : public EventPublisherBase {
+  class EventPublisher {
   public:
-    EventPublisher() : index(0), subscriptions(std::map<uint64_t, std::function<bool(EventType)>>()) { }
+    EventPublisher() : index(0), subscriptions(std::map<uint64_t, std::function<EventConsumed(EventType)>>()) { }
     ~EventPublisher() = default;
     inline void Publish(EventType& e)
     {
@@ -39,7 +36,7 @@ namespace Pistacio
       }
     }
 
-    inline Subscription Subscribe(std::function<bool(EventType)> action)
+    inline Subscription Subscribe(std::function<EventConsumed(EventType)> action)
     {
       uint64_t i = index;
       subscriptions.insert(std::make_pair(i, action));
@@ -49,35 +46,42 @@ namespace Pistacio
 
   private:
     uint64_t index;
-    std::map<uint64_t, std::function<bool(EventType)>> subscriptions;
+    std::map<uint64_t, std::function<EventConsumed(EventType)>> subscriptions;
   };
 
   class EventLibrary
   {
   public:
+
+    EventLibrary()
+    {
+      PSTC_CORE_ASSERT(!m_Instantiated, "Only one event library can be instantiated!");
+      m_Instantiated = true;
+    }
+
     template<typename EventType>
     inline void Register()
     {
       std::type_index index = typeid(EventType);
 
-      if (publishers.find(index) == publishers.end())
+      if (m_Publishers.find(index) == m_Publishers.end())
       {
-        publishers.insert(std::pair<std::type_index, EventPublisherBase*>(index, new EventPublisher<EventType>));
+        m_Publishers.insert(std::pair<std::type_index, void*>(index, new EventPublisher<EventType>));
       }
 
-      PSTC_CORE_ASSERT(publishers[index] != nullptr, "Event registration failed!");
+      PSTC_CORE_ASSERT(m_Publishers[index] != nullptr, "Event registration failed!");
     }
 
     template<typename EventType>
-    inline Subscription Subscribe(std::function<bool(EventType)> callback)
+    inline Subscription Subscribe(std::function<EventConsumed(EventType)> callback)
     {
       std::type_index index = typeid(EventType);
 #ifdef PSTC_DEBUG
-      bool isAllocated = publishers.find(index) != publishers.end();
+      bool isAllocated = m_Publishers.find(index) != m_Publishers.end();
       PSTC_CORE_ASSERT(isAllocated, "Unregistered event type: \"{0}\"! Use EventLibrary.Register<EventType>() to register an event type.", typeid(EventType).name());
 #endif
 
-      return reinterpret_cast<EventPublisher<EventType>*>(publishers[index])->Subscribe(callback);
+      return reinterpret_cast<EventPublisher<EventType>*>(m_Publishers[index])->Subscribe(callback);
     }
 
     template<typename EventType>
@@ -85,15 +89,16 @@ namespace Pistacio
     {
       std::type_index index = typeid(EventType);
 #ifdef PSTC_DEBUG
-      bool isAllocated = publishers.find(index) != publishers.end();
+      bool isAllocated = m_Publishers.find(index) != m_Publishers.end();
       PSTC_CORE_ASSERT(isAllocated, "Unregistered event type: \"{0}\"! Use EventLibrary.Register<EventType>() to register an event type.", typeid(EventType).name());
 #endif
 
-      reinterpret_cast<EventPublisher<EventType>*>(publishers[index])->Publish(e);
+      reinterpret_cast<EventPublisher<EventType>*>(m_Publishers[index])->Publish(e);
     }
 
   private:
-    std::unordered_map<std::type_index, EventPublisherBase*> publishers;
+    std::unordered_map<std::type_index, void*> m_Publishers;
+    static bool m_Instantiated;
   };
 
 

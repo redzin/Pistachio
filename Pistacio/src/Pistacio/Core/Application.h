@@ -3,46 +3,44 @@
 #include "pch.h"
 #include "Core.h"
 
-#include "Pistacio/Rendering/Camera/Camera.h"
-
-#ifdef PSTC_PLATFORM_WINDOWS
-#include "PistacioPlatform/Windows/WindowsWindow.h"
-#endif
-
 using namespace std::literals::chrono_literals;
 
 namespace Pistacio {
   
+
   class Application
   {
   public:
     Application(std::string appName);
     Application(std::string appName, bool WindowHintFloat);
-    Application(std::string appName, uint32_t width, uint32_t height, bool WindowHintFloat);
+    Application(std::string appName, uint32_t m_Width, uint32_t m_Height, bool WindowHintFloat);
+    Application(std::string appName, uint32_t m_Width, uint32_t m_Height);
     Application(Application& app) = default;
     ~Application();
 
+  private:
+    static bool m_Instantiated;
+
+  public:
     void Run();
     void AddLayer(Layer* layer);
     void AddOverlay(Layer* layer);
-    EventLibrary& GetEventLibrary();
-    Window& GetWindow();
-
-    static Application* Get();
 
   private:
-    EventLibrary EventLibrary;
-    bool OnWindowCloseEvent();
-    bool OnWindowResizeEvent(int width, int height);
+    EventConsumed OnWindowCloseEvent();
+    EventConsumed OnWindowResizeEvent(int m_Width, int m_Height);
 
-    bool app_running = true;
-    std::unique_ptr<Window> window;
-    std::unique_ptr<LayerStack> layerStack;
-    std::unique_ptr<ImGuiRenderer> imguiRenderer;
+  private:
+    bool m_AppRunning = true;
 
+  private:
+    EventLibrary m_EventLibrary;
+    Window m_Window;
+    LayerStack m_LayerStack;
+    Scope<ImGuiRenderer> m_ImguiRenderer;
+
+  private:
     std::chrono::steady_clock::duration lastFrameTime = 6ms;
-
-    static Application* singletonInstance;
   };
 
   class ApplicationFactory
@@ -55,11 +53,6 @@ namespace Pistacio {
 
   private:
     static Application* doCreate();
-  };
-
-  struct AppUpdateEvent
-  {
-    std::chrono::steady_clock::duration dt;
   };
 
 }

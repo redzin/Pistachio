@@ -17,6 +17,8 @@ IncludeDir["glad"] = "%{wks.location}/Pistacio/vendor/glad/glad/include"
 IncludeDir["ImGui"] = "%{wks.location}/Pistacio/vendor/ImGui/ImGui"
 IncludeDir["glm"] = "%{wks.location}/Pistacio/vendor/glm"
 IncludeDir["stb_image"] = "%{wks.location}/Pistacio/vendor/stb_image"
+IncludeDir["entt"] = "%{wks.location}/Pistacio/vendor/entt"
+IncludeDir["json"] = "%{wks.location}/Pistacio/vendor/json/include"
 
 project "Pistacio"
 	location "Pistacio"
@@ -49,7 +51,9 @@ project "Pistacio"
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.stb_image}"
+		"%{IncludeDir.stb_image}",
+		"%{IncludeDir.entt}",
+		"%{IncludeDir.json}"
 	}
 
 	links

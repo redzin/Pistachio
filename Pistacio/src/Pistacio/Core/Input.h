@@ -32,7 +32,7 @@ namespace Pistacio::Input
 		s += flags & static_cast<int>(KeyModFlags::Super) ? "Super + " : "";
 		s += flags & static_cast<int>(KeyModFlags::CapsLock) ? "CapsLock + " : "";
 		s += flags & static_cast<int>(KeyModFlags::NumLock) ? "NumLock + " : "";
-		if (s.size() == 0)
+		if (s.size())
 			return "None";
 		return s.substr(0, s.size() - 3);
 	}
@@ -199,8 +199,8 @@ struct fmt::formatter<Pistacio::Input::KeyCode> : formatter<string_view>
 	template <typename FormatContext>
 	auto format(Pistacio::Input::KeyCode keyCode, FormatContext& ctx)
 	{
-		string_view name = std::to_string(static_cast<int>(keyCode));
-		return formatter<string_view>::format(name, ctx);
+		string_view SemanticName = std::to_string(static_cast<int>(keyCode));
+		return formatter<string_view>::format(SemanticName, ctx);
 	}
 };
 
@@ -210,8 +210,8 @@ struct fmt::formatter<Pistacio::Input::MouseCode> : formatter<string_view>
 	template <typename FormatContext>
 	auto format(Pistacio::Input::MouseCode mouseCode, FormatContext& ctx)
 	{
-		string_view name = std::to_string(static_cast<int>(mouseCode));
-		return formatter<string_view>::format(name, ctx);
+		string_view SemanticName = std::to_string(static_cast<int>(mouseCode));
+		return formatter<string_view>::format(SemanticName, ctx);
 	}
 };
 
@@ -221,19 +221,19 @@ struct fmt::formatter<Pistacio::Input::ButtonAction> : formatter<string_view>
 	template <typename FormatContext>
 	auto format(Pistacio::Input::ButtonAction action, FormatContext& ctx)
 	{
-		string_view name = "UnknownKeyAction";
+		string_view SemanticName = "UnknownKeyAction";
 		switch (action)
 		{
 		case Pistacio::Input::ButtonAction::KeyPressed:
-			name = "KeyPressed";
+			SemanticName = "KeyPressed";
 			break;
 		case Pistacio::Input::ButtonAction::KeyReleased:
-			name = "KeyReleased";
+			SemanticName = "KeyReleased";
 			break;
 		case Pistacio::Input::ButtonAction::KeyRepeated:
-			name = "KeyRepeated";
+			SemanticName = "KeyRepeated";
 			break;
 		}
-		return formatter<string_view>::format(name, ctx);
+		return formatter<string_view>::format(SemanticName, ctx);
 	}
 };

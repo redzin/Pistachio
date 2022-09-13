@@ -14,7 +14,7 @@ Pistacio::Application* Pistacio::ApplicationFactory::doCreate()
 {
   CounterApp* counterApp = new CounterApp();
 
-  counterApp->PushOverlay(new ImGuiCounterLayer());
+  counterApp->AddOverlay(new ImGuiCounterLayer());
 
   return counterApp;
 }

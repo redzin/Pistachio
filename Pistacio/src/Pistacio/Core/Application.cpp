@@ -5,35 +5,34 @@
 
 namespace Pistacio
 {
+  bool Application::m_Instantiated = false;
 
-  Application* Application::singletonInstance = nullptr;
-
-  Application::Application(std::string appName, uint32_t width, uint32_t height, bool windowHintFloat)
+  Application::Application(std::string appName, uint32_t m_Width, uint32_t m_Height, bool windowHintFloat)
+    : m_Window(Window(appName, m_Width, m_Height, m_EventLibrary))
   {
-    PSTC_CORE_ASSERT(!singletonInstance, "Application instance already created, only one instance allowed!");
-    singletonInstance = this;
 
-    INIT_LOGGER
-      PSTC_CORE_INFO("Logger initialized!");
+    PSTC_CORE_ASSERT(!m_Instantiated, "Application instance already created, only one instance allowed!");
+    m_Instantiated = true;
 
-    window = Window::Create(appName, width, height, windowHintFloat);
-    window->SetVSync(false);
+    INIT_LOGGER();
+    PSTC_CORE_INFO("Logger initialized!");
 
-    EventLibrary.Subscribe<WindowCloseEvent>([this](WindowCloseEvent e)
+    m_Window.Init(windowHintFloat);
+    m_Window.SetVSync(true);
+    m_EventLibrary.Subscribe<WindowCloseEvent>([this](WindowCloseEvent e)
       {
         return OnWindowCloseEvent();
       });
-    EventLibrary.Subscribe<WindowResizeEvent>([this](WindowResizeEvent e)
+    m_EventLibrary.Subscribe<WindowResizeEvent>([this](WindowResizeEvent e)
       {
-        return OnWindowResizeEvent(e.width, e.height);
-      });
-    layerStack.reset(new LayerStack);
-    imguiRenderer.reset(ImGuiRenderer::Create());
-    Renderer::Init();
-    EventLibrary.Register<AppUpdateEvent>();
+        return OnWindowResizeEvent(e.m_Width, e.m_Height);
+      }
+    );
+
+    m_ImguiRenderer = ImGuiRenderer::Create();
 
 #ifdef PSTC_DEBUG
-    EventLibrary.Subscribe<KeyEvent>([](KeyEvent e)
+    m_EventLibrary.Subscribe<KeyEvent>([](KeyEvent e)
       {
         if (e.key == Input::KeyCode::P && e.action == Input::ButtonAction::KeyPressed)
         {
@@ -49,6 +48,10 @@ namespace Pistacio
   {
   }
 
+  Application::Application(std::string appName, uint32_t m_Width, uint32_t m_Height) : Application(appName, m_Width, m_Height, false)
+  {
+  }
+
   Application::Application(std::string appName) : Application(appName, 1080, 720, false)
   {
   }
@@ -60,79 +63,64 @@ namespace Pistacio
   bool Application::OnWindowCloseEvent()
   {
     PSTC_CORE_INFO("Exiting...");
-    app_running = false;
+    m_AppRunning = false;
     return false;
   }
 
-  bool Application::OnWindowResizeEvent(int width, int height)
+  bool Application::OnWindowResizeEvent(int m_Width, int m_Height)
   {
     #ifdef PSTC_VERBOSE_DEBUG
       PSTC_CORE_INFO("Resize to ({0}, {1})", width, height);
     #endif
-    Renderer::SetViewport(0,0,width,height);
+    //Renderer::Resize(width,height);
     return true;
   }
 
   void Application::Run()
   {
     //Run loop
-    while (app_running)
+    while (m_AppRunning)
     {
 
       std::chrono::time_point start = std::chrono::steady_clock::now();
 
-      window->PollUIEvents();
+      m_Window.PollUIEvents();
 
       // Consider refactoring events with ECS according to:
       // https://gamedev.stackexchange.com/questions/141636/event-handling-in-pure-entity-component-systems-is-this-approach-correct
-      EventLibrary.Publish(AppUpdateEvent{ lastFrameTime });
 
-      for (auto layerIter = layerStack->rbegin(); layerIter != layerStack->rend(); layerIter++)
+      for (auto layerIter = m_LayerStack.rbegin(); layerIter != m_LayerStack.rend(); layerIter++)
       {
-        (*layerIter)->OnRender();
+        (*layerIter)->OnUpdate(lastFrameTime);
+        (*layerIter)->OnRender(m_Window.GetDevice(), m_Window);
       }
 
-      imguiRenderer->BeginRender();
-      for (Layer* layer : *layerStack)
+      m_ImguiRenderer->BeginRender();
+      for (Layer* layer : m_LayerStack)
       {
-        layer->OnGuiRender();
+        layer->OnGuiRender(m_Window, m_EventLibrary);
       }
 
-      imguiRenderer->EndRender();
+      m_ImguiRenderer->EndRender();
 
-      window->Present();
+      m_Window.SwapBuffers();
 
       lastFrameTime = std::chrono::steady_clock::now() - start;
     }
 
-    imguiRenderer.reset(nullptr); // make sure imgui is shutdown before the window
-    window->Shutdown();
+    m_ImguiRenderer.reset(nullptr); // make sure imgui is shutdown before the window
+    m_Window.Shutdown();
   }
 
   void Application::AddLayer(Layer* layer)
   {
-    layerStack->PushLayer(layer);
-    layer->OnAttach();
+    m_LayerStack.PushLayer(layer);
+    layer->OnAttach(m_Window, m_EventLibrary);
   }
   void Application::AddOverlay(Layer* layer)
   {
-    layerStack->PushOverlay(layer);
-    layer->OnAttach();
-  }
-
-  Application* Application::Get()
-  {
-    return singletonInstance;
-  }
-
-  EventLibrary& Application::GetEventLibrary()
-  {
-    return EventLibrary;
-  }
-
-  Window& Application::GetWindow()
-  {
-    return *window;
+    m_LayerStack.PushOverlay(layer);
+    layer->OnAttach(m_Window, m_EventLibrary);
   }
 
 }

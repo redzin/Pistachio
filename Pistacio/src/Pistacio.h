@@ -5,6 +5,5 @@
 #include "Pistacio/Core/Events.h"
 
 #ifdef PSTC_PLATFORM_WINDOWS
-#include "PistacioPlatform/OpenGL/Swapchain_OpenGL.h"
 #include "PistacioPlatform/OpenGL/ImGuiRenderer_GLFW_OpenGL.h"
 #endif

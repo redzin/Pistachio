@@ -18,7 +18,9 @@ project "Sandbox"
 		"%{IncludeDir.glad}",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.entt}",
+		"%{IncludeDir.json}"
 	}
 
 	links

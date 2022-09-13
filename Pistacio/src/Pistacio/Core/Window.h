@@ -1,48 +1,72 @@
 #pragma once
 
 #include "pch.h"
+#include "Pistacio/Rendering/Device.h"
 
+#include <glad/glad.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 namespace Pistacio
 {
 
   class Window
   {
+    friend class Application;
+
   public:
-    
-    Window() = default;
-    virtual ~Window() = default;
+    Window(std::string windowName, uint32_t m_Width, uint32_t m_Height, EventLibrary& eventLib);
+    ~Window() = default;
+    void HideCursor();
+    void ShowCursor();
+    bool IsKeyPressed(Input::KeyCode code) const;
+    bool IsMouseButtonPressed(Input::MouseCode code) const;
+    double GetMouseX() const;
+    double GetMouseY() const;
+    double GetScrollX() const;
+    double GetScrollY() const;
+    glm::dvec2 GetMousePos() const;
+    void MakeRenderingContextCurrent() const;
+    RenderingAPI::GetRenderAPIProcAddress GetProcAddress() const;
 
-    virtual void HideCursor() = 0;
-    virtual void ShowCursor() = 0;
+    inline uint32_t GetWidth() const { return m_Width; };
+    inline uint32_t GetHeight() const { return m_Height; };
 
-    virtual bool IsKeyPressed(Input::KeyCode code) const = 0;
-    virtual bool IsMouseButtonPressed(Input::MouseCode code) const = 0;
-    virtual double GetMouseX() const = 0;
-    virtual double GetMouseY() const = 0;
-    virtual glm::dvec2 GetMousePos() const = 0;
+    void SetVSync(bool enabled);
+    bool IsVSync() const;
 
-    virtual uint32_t GetWidth() const = 0;
-    virtual uint32_t GetHeight() const = 0;
-
-    virtual void SetVSync(bool enabled) = 0;
-    virtual bool IsVSync() const = 0;
-
-    static std::unique_ptr<Window> Create(std::string windowName, uint32_t width, uint32_t height, bool hintFloat);
+    Device& GetDevice() { return *m_Device; }
 
   private:
-    friend class Application;
-    virtual void PollUIEvents() = 0;
-    virtual void Present() = 0;
-    virtual void Shutdown() = 0;
+    void PollUIEvents();
+    void SwapBuffers() const;
+    void Shutdown();
+
+  private:
+    void Init(bool hintFloat);
+
+    std::string m_Title;
+    uint32_t m_Width, m_Height;
+    bool m_VSync;
+
+    struct CallbackData {
+      double ScrollX = 0, ScrollY = 0;
+      EventLibrary& eventLib;
+    };
+    CallbackData m_CallbackData;
+
+    GLFWwindow* m_GLFWWindow = nullptr;
+
+    Ref<Device> m_Device = nullptr;
+
   };
 
   struct WindowCloseEvent { };
 
   struct WindowResizeEvent
   {
-    const int width;
-    const int height;
+    const int m_Width;
+    const int m_Height;
   };
 
   struct KeyEvent
@@ -68,6 +92,7 @@ namespace Pistacio
     const Input::ButtonAction action;
     const Input::MouseCode mouseKey;
     const int modFlags;
+    int x, y;
   };
 }
 

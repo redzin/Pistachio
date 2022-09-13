@@ -1,19 +1,13 @@
 #include <Pistacio.h>
 #include "Pistacio/Core/EntryPoint.h"
 #include "Pistacio/Rendering/ImGui/ImGuiRenderer.h"
-#include "Pistacio/Rendering/Swapchain.h"
-#include "Pistacio/Rendering/Shader.h"
-#include "Pistacio/Rendering/Buffer.h"
-#include "Pistacio/Rendering/VertexArray.h"
-#include "Pistacio/Rendering/Renderer.h"
-#include "Pistacio/Rendering/UniformBuffer.h"
-#include "Pistacio/Rendering/Texture.h"
-#include "Pistacio/Rendering/Framebuffer.h"
-#include "Pistacio/Rendering/Camera/PerspectiveCamera.h"
-#include "Pistacio/Rendering/Camera/CameraController_FPS.h"
-#include "Pistacio/Rendering/Camera/CameraController_Pan.h"
-#include "Pistacio/Rendering/Camera/CameraController_Zoom.h"
-#include "Pistacio/Rendering/Camera/CameraController_Orbit.h"
+#include "Pistacio/Rendering/RenderGraph.h"
+#include "Pistacio/Scene/Camera/PerspectiveCamera.h"
+#include "Pistacio/Scene/Camera/CameraController_FPS.h"
+#include "Pistacio/Scene/Camera/CameraController_Pan.h"
+#include "Pistacio/Scene/Camera/CameraController_Zoom.h"
+#include "Pistacio/Scene/Camera/CameraController_Orbit.h"
+#include "examples/InstancedSpritePass.h"
 
 namespace Pistacio
 {
@@ -29,175 +23,189 @@ namespace Pistacio
   {
   public:
 
-    bool vsync = Application::Get()->GetWindow().IsVSync();
+    bool vsync = true;
     ImVec4 imgui_clear_color = ImVec4(0.7f, 0.85f, 0.92f, 1.00f);
-    EventLibrary& eventLibrary;
 
     glm::vec4 clear_color{ 0.65f, 0.88f, 0.92f, 1.00f };
-
-    float vertexAttributes[8 * 4] = {
-      -1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-       1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-       1.0f,  1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-      -1.0f,  1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f
-    };
-    unsigned int indices[6] = { 0, 1, 2, 2, 3, 0};
-
-    Ref<VertexBuffer> vertexBuffer;
-    Ref<IndexBuffer> indexBuffer;
-    Ref<VertexArray> vertexArray;
-    Ref<Texture2D> texture;
-    Ref<Texture2D> textureWithAlpha;
-    Ref<Framebuffer> framebuffer;
-    Ref<Framebuffer> presentbuffer;
 
     Camera camera;
     inline static constexpr float fovY = 70;
     inline static constexpr float zNear = 0.1f;
-    inline static constexpr float zFar = 100.0f;
+    inline static constexpr float zFar = 1000.0f;
     CameraController_Pan cameraControllerPan;
     CameraController_Zoom cameraControllerZoom;
     CameraController_Orbit cameraControllerOrbit;
 
+    Scene m_Scene;
+    RenderGraph m_RenderGraph;
+    std::vector<const char*> m_PresentTextureNames;
+
     const char* GetName() const { return "SimpleImGuiLayer"; }
 
-    SampleTriangleLayer(uint32_t width, uint32_t height) : eventLibrary(Pistacio::Application::Get()->GetEventLibrary())
+    SampleTriangleLayer(uint32_t width, uint32_t height)
+      : cameraControllerOrbit(CameraController_Orbit()), camera(
+        CameraController_Orbit::CreateCamera(
+          CameraController_Orbit(),
+          glm::vec3(0),
+          glm::vec3(0.0f, 0.0f, -1.0f),
+          fovY,
+          width,
+          height,
+          zNear,
+          zFar)
+      ),
+      m_ViewportWidth(width), m_ViewportHeight(height)
     {
-      //camera = PerspectiveCamera::Create(glm::vec3{ 0.0f, 0.0f, -0.5f }, glm::vec3{ 0.0f, 0.0f, 0.0f }, 45.0f, 1080, 720, 0.1f, 100.0f);
-      camera = CameraController_Orbit::CreateCamera(cameraControllerOrbit, glm::vec3(0), glm::vec3(0.0f, 0.0f, -1.0f), fovY, width, height, zNear, zFar);
     }
 
-    void OnAttach() override
+    struct ViewportMouseClickEvent : MouseClickEvent {};
+    struct ViewportMouseMoveEvent : MouseMoveEvent {};
+    struct ViewportMouseScrollEvent : MouseScrollEvent {};
+
+    static void SortTransparentSprites(Scene& scene, Camera camera)
     {
-      EventLibrary eventLib = Pistacio::Application::Get()->GetEventLibrary();
-      eventLib.Subscribe<MouseMoveEvent>([this](MouseMoveEvent e)
+      scene.Sort<TransparentRenderableComponent>([&scene, &camera](const EntityID lhs, const EntityID rhs)
         {
-          cameraControllerPan = CameraController_Pan::OnMouseMoveEvent(cameraControllerPan, e);
-          cameraControllerOrbit = CameraController_Orbit::OnMouseMoveEvent(cameraControllerOrbit, e);
-          return true;
+          SceneEntity lhsEntity(scene, std::move(lhs));
+          SceneEntity rhsEntity(scene, std::move(rhs));
+          auto lhsSprite = lhsEntity.GetComponent<SpriteRenderableComponent>();
+          auto rhsSprite = rhsEntity.GetComponent<SpriteRenderableComponent>();
+      
+          return glm::length(glm::vec4(camera.position, 1.0) - lhsSprite.Transform[3]) > glm::length(glm::vec4(camera.position, 1.0) - rhsSprite.Transform[3]);
         }
       );
-      eventLib.Subscribe<AppUpdateEvent>([this](AppUpdateEvent e)
+      scene.Sort<SpriteRenderableComponent, TransparentRenderableComponent>();
+    }
+
+    void OnAttach(Window& window, EventLibrary& eventLib) override
+    {
+      m_ViewportWidth = window.GetWidth();
+      m_ViewportHeight = window.GetHeight();
+
+      eventLib.Subscribe<KeyEvent>([&eventLib](KeyEvent e)
         {
-          std::tie(camera, cameraControllerPan) = CameraController_Pan::OnUpdate(camera, e.dt, cameraControllerPan);
-          std::tie(camera, cameraControllerOrbit) = CameraController_Orbit::OnUpdate(camera, e.dt, cameraControllerOrbit);
-          //std::tie(camera, cameraControllerZoom) = CameraController_Zoom::OnUpdate(camera, e.dt, cameraControllerZoom);
-          return true;
-        }
-      );
-      eventLib.Subscribe<MouseClickEvent>([this](MouseClickEvent e)
-        {
-          ImGuiIO guiIO = ImGui::GetIO();
-          if (!guiIO.WantCaptureMouse)
-          {
-            Window& window = Application::Get()->GetWindow();
-            if (e.action == Input::ButtonAction::KeyPressed && e.mouseKey == Input::MouseCode::ButtonRight)
-            {
-              // do not use for now
-              // cameraControllerPan = CameraController_Pan::Enable(cameraControllerPan);
-              window.HideCursor();
-            }
-            else if (e.action == Input::ButtonAction::KeyPressed && e.mouseKey == Input::MouseCode::ButtonLeft)
-            {
-              cameraControllerOrbit = CameraController_Orbit::Enable(cameraControllerOrbit);
-              window.HideCursor();
-            }
-            else if (e.action == Input::ButtonAction::KeyReleased && e.mouseKey == Input::MouseCode::ButtonRight)
-            {
-              cameraControllerPan = CameraController_Pan::Disable(cameraControllerPan);
-              window.ShowCursor();
-            }
-            else if (e.action == Input::ButtonAction::KeyReleased && e.mouseKey == Input::MouseCode::ButtonLeft)
-            {
-              cameraControllerOrbit = CameraController_Orbit::Disable(cameraControllerOrbit);
-              window.ShowCursor();
-            }
-          }
-          
-          return true;
-        }
-      );
-      eventLib.Subscribe<MouseScrollEvent>([this](MouseScrollEvent e)
-        {
-          cameraControllerOrbit = CameraController_Orbit::OnMouseScrollEvent(cameraControllerOrbit, e);
-          return true;
-        }
-      );
-      eventLib.Subscribe<WindowResizeEvent>([this](WindowResizeEvent e)
-        {
-          camera = PerspectiveCamera::NewPerspective(camera, fovY, e.width, e.height, zNear, zFar);
+          if (e.key == Input::KeyCode::Escape && e.action == Input::ButtonAction::KeyPressed)
+            eventLib.Publish<WindowCloseEvent>(WindowCloseEvent{});
           return true;
         }
       );
 
+      auto texChechkerboardPath = "assets/textures/Checkerboard.png";
+      auto texChernoPath = "assets/textures/ChernoLogo.png";
+      auto texCherno2Path = "assets/textures/ChernoLogo2.png";
 
-      ShaderLibrary& shaderLibrary = Renderer::GetShaderLibrary();
-      shaderLibrary.Load("assets/shaders/TextureQuad.glsl");
-      shaderLibrary.Load("assets/shaders/TextureQuadCamera.glsl");
-      
-      // Create vertex attribute buffer
-      vertexBuffer = VertexBuffer::Create(vertexAttributes, sizeof(vertexAttributes));
-      BufferLayout vertexBufferLayout{
-        { BufferDataType::Float3, "a_Position" },
-        { BufferDataType::Float3, "a_Color" },
-        { BufferDataType::Float2, "a_TexCoord" }
-      };
-      vertexBuffer->SetLayout(vertexBufferLayout);
-      
-      //Create index buffer
-      indexBuffer = IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
-      
-      //Create vertex array
-      vertexArray = VertexArray::Create();
-      vertexArray->SetIndexBuffer(indexBuffer);
-      vertexArray->AddVertexBuffer(vertexBuffer);
-      
-      
-      TextureDescriptor textDesc;
-      textDesc.MagFilter = TextureFilter::Nearest;
-      textDesc.MinFilter = TextureFilter::Nearest;
-      texture = Texture2D::Create("assets/textures/Checkerboard.png", textDesc);
-      
-      textDesc.MagFilter = TextureFilter::Linear;
-      textDesc.MinFilter = TextureFilter::Linear;
-      textureWithAlpha = Texture2D::Create("assets/textures/ChernoLogo.png", textDesc);
-      
-      FramebufferDescriptor fbDesc;
-      fbDesc.Width = Application::Get()->GetWindow().GetWidth();
-      fbDesc.Height = Application::Get()->GetWindow().GetHeight();
-      framebuffer = Framebuffer::Create(fbDesc);
-      
-      fbDesc.IsSwapchainTarget = true;
-      presentbuffer = Framebuffer::Create(fbDesc);
+      Device& device = window.GetDevice();
 
+      std::unordered_map<std::string, uint32_t> textureMap = { {texChernoPath, 0}, {texCherno2Path, 1} };
+
+      int max = glm::pow(2, 4);
+      Examples::AddSpritePassInstanced(device, m_RenderGraph, m_Scene, camera, textureMap, 1 * glm::pow(max, 2), 1024, 1024, clear_color);
+      m_PresentTextureNames = { "SpritePassColorResolveOutput" };
+
+      // Create Scene
+      float shift = max / 2.0;
+      glm::mat4 transform;
+      for (int i = 0; i < max; i++)
+      {
+        for (int j = 0; j < max; j++)
+        {
+          //SceneEntity spriteChernoA = m_Scene.CreateEntity();
+          //spriteChernoA.AddComponent<SemanticNameComponent>("ChernoLogoA" + std::to_string(i) + std::to_string(j));
+          //transform = glm::translate(glm::mat4(1.0f), glm::vec3(i - shift, j - shift, 0.0f));
+          //spriteChernoA.AddComponent<SpriteRenderableComponent>(SpriteRenderableComponent{ texChernoPath });
+          //spriteChernoA.AddComponent<TransparentRenderableComponent>();
+          //
+          //SceneEntity spriteChernoC = m_Scene.CreateEntity();
+          //spriteChernoC.AddComponent<SemanticNameComponent>("ChernoLogoC" + std::to_string(i) + std::to_string(j));
+          //transform = glm::translate(glm::mat4(1.0f), glm::vec3(i - shift, j - shift, 0.5f));
+          //spriteChernoC.AddComponent<SpriteRenderableComponent>(SpriteRenderableComponent{ texChernoPath });
+          //spriteChernoC.AddComponent<TransparentRenderableComponent>();
+      
+          SceneEntity spriteChernoB = m_Scene.CreateEntity();
+          spriteChernoB.AddComponent<SemanticNameComponent>("ChernoLogoB" + std::to_string(i) + std::to_string(j));
+          transform = glm::translate(glm::mat4(1.0f), glm::vec3(i - shift, j - shift, -0.5f));
+          spriteChernoB.AddComponent<SpriteRenderableComponent>(SpriteRenderableComponent{ texCherno2Path, textureMap[texCherno2Path], transform });
+        }
+      }
+
+      LoadScene(); // wip
 
       PSTC_INFO("SampleTriangleLayer attached!");
     }
 
-    void OnDetach() override
+    void OnDetach(Window& window, EventLibrary&) override
     {
       PSTC_INFO("SampleTriangleLayer detached!");
     }
 
-    void OnRender() override
+    void OnUpdate(std::chrono::duration<float> dt) override
     {
-      auto shader = Renderer::GetShaderLibrary().Get("TextureQuadCamera");
-      glm::mat4 transform(1);
+      camera = CameraController_Pan::UpdateCamera(camera, dt, cameraControllerPan);
+      cameraControllerPan = CameraController_Pan::UpdateState(dt, cameraControllerPan);
+      CameraController_Orbit::UpdateCamera(camera, dt, cameraControllerOrbit);
       
-      Renderer::BeginScene(camera, framebuffer, clear_color);
-      Renderer::Submit(shader, transform, vertexArray, texture);
-      Renderer::Submit(shader, glm::translate(transform, glm::vec3(0.0f, 0.0f, 0.5f)), vertexArray, textureWithAlpha);
-      Renderer::EndScene();
-      Renderer::Present(presentbuffer);
+      SortTransparentSprites(m_Scene, camera);
 
     }
 
-    void RenderImGuiDockspace()
+    void OnRender(Device& device, Window& window) override
+    {
+      if (camera.viewport.x != m_ViewportWidth || camera.viewport.y != m_ViewportHeight)
+      {
+        camera = PerspectiveCamera::NewPerspective(camera, fovY, m_ViewportWidth, m_ViewportHeight, zNear, zFar);
+      }
+
+      m_RenderGraph.Render(device, window, m_ViewportWidth, m_ViewportHeight);
+
+    }
+
+    bool OnViewportMouseClickEvent(ViewportMouseClickEvent& e, Window& window)
+    {
+      if (e.action == Input::ButtonAction::KeyPressed && e.mouseKey == Input::MouseCode::ButtonRight)
+      {
+        // do not use for now
+        // cameraControllerPan = CameraController_Pan::Enable(cameraControllerPan);
+        window.HideCursor();
+      }
+      else if (e.action == Input::ButtonAction::KeyPressed && e.mouseKey == Input::MouseCode::ButtonLeft)
+      {
+        cameraControllerOrbit = CameraController_Orbit::Enable(cameraControllerOrbit, e.x, e.y);
+        window.HideCursor();
+      }
+      else if (e.action == Input::ButtonAction::KeyReleased && e.mouseKey == Input::MouseCode::ButtonRight)
+      {
+        //cameraControllerPan = CameraController_Pan::Disable(cameraControllerPan);
+        window.ShowCursor();
+      }
+      else if (e.action == Input::ButtonAction::KeyReleased && e.mouseKey == Input::MouseCode::ButtonLeft)
+      {
+        cameraControllerOrbit = CameraController_Orbit::Disable(cameraControllerOrbit, e.x, e.y);
+        window.ShowCursor();
+      }
+
+      return true;
+    }
+
+    bool OnViewportMouseMoveEvent(ViewportMouseMoveEvent& e)
+    {
+      
+      //cameraControllerPan = CameraController_Pan::OnMouseMoveEvent(cameraControllerPan, e);
+      cameraControllerOrbit = CameraController_Orbit::OnMouseMoveEvent(cameraControllerOrbit, e);
+      return true;
+    }
+
+    bool OnViewportScrollEvent(ViewportMouseScrollEvent& e)
+    {
+      cameraControllerOrbit = CameraController_Orbit::OnMouseScrollEvent(cameraControllerOrbit, e);
+      return true;
+    }
+
+    void RenderImGuiDockspace(Window& window, EventLibrary& eventLibrary)
     {
 
       ImGuiDockNodeFlags dockspace_flags
-        = ImGuiDockNodeFlags_NoDockingInCentralNode
-        | ImGuiDockNodeFlags_PassthruCentralNode;
+        = ImGuiDockNodeFlags_NoDockingInCentralNode;
+        //| ImGuiDockNodeFlags_PassthruCentralNode;
 
       // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
       // because it would be confusing to have two docking targets within each others.
@@ -235,6 +243,28 @@ namespace Pistacio
       {
         ImGuiID dockspace_id = ImGui::GetID("Dockspace");
         ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+
+        static auto first_time = true;
+        if (first_time)
+        {
+          first_time = false;
+
+          ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
+          ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
+          ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
+
+          // split the dockspace into 2 nodes -- DockBuilderSplitNode takes in the following args in the following order
+          //   window ID to split, direction, fraction (between 0 and 1), the final two setting let's us choose which id we want (which ever one we DON'T set as NULL, will be returned by the function)
+          //                                                              out_id_at_dir is the id of the node in the direction we specified earlier, out_id_at_opposite_dir is in the opposite direction
+
+          auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.3f, nullptr, &dockspace_id);
+          ImGui::DockBuilderDockWindow("Pistacio Control Panel", dock_id_left);
+          ImGui::DockBuilderDockWindow("Viewport", dockspace_id);
+          ImGui::DockBuilderFinish(dockspace_id);
+          ImGuiDockNode* Node = ImGui::DockBuilderGetNode(dockspace_id);
+          Node->LocalFlags |= ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton | ImGuiDockNodeFlags_NoTabBar;
+
+        }
       }
 
       if (ImGui::BeginMenuBar())
@@ -247,7 +277,7 @@ namespace Pistacio
           };
           ImGui::Separator();
           if (ImGui::MenuItem("Close", NULL, false, &open != NULL))
-            Application::Get()->GetEventLibrary().Publish<WindowCloseEvent>(std::move(WindowCloseEvent()));
+            eventLibrary.Publish<WindowCloseEvent>(std::move(WindowCloseEvent()));
           ImGui::EndMenu();
         }
         //ImGuiRenderer::HelpMarker("Helper text!");
@@ -258,59 +288,107 @@ namespace Pistacio
       ImGui::End();
     }
 
-    void OnGuiRender() override
-    {
+    uint32_t m_ViewportWidth;
+    uint32_t m_ViewportHeight;
 
+    void OnGuiRender(Window& window, EventLibrary& eventLibrary) override
+    {
       //ImGui::ShowDemoWindow();
 
-      RenderImGuiDockspace();
+      ImGuiIO& io = ImGui::GetIO();
+      io.ConfigWindowsMoveFromTitleBarOnly = true;
+      io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
 
-      ImGui::Begin("Pistacio Controls Panel");
+      RenderImGuiDockspace(window, eventLibrary);
+      
+      ImGui::Begin("Pistacio Control Panel");
 
       ImGui::Checkbox("VSync", &vsync);
+      
+      if (vsync != window.IsVSync())
+        window.SetVSync(vsync);
 
-      if (vsync != Application::Get()->GetWindow().IsVSync())
-        Application::Get()->GetWindow().SetVSync(vsync);
+      static int selectedPresentTextureIndex = 0;
+      ImGui::ListBox("Display texture", &selectedPresentTextureIndex, m_PresentTextureNames.data(), m_PresentTextureNames.size(), 3);
 
       //static float f = 0.0f;
       //ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-
+      
       ImGui::ColorEdit3("clear color", (float*)&imgui_clear_color); // Edit 3 floats representing a color
       clear_color.x = imgui_clear_color.x;
       clear_color.y = imgui_clear_color.y;
       clear_color.z = imgui_clear_color.z;
       clear_color.w = imgui_clear_color.w;
-
+      
       ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
       ImGui::Text("Primary camera location: (%.2f, %.2f, %.2f)", camera.position.x, camera.position.y, camera.position.z);
       ImGui::End();
-
-      ImGui::Begin("Viewport");
-      ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-      TextureDescriptor colorTextDesc = framebuffer->GetColorAttachment()->GetDescriptor();
       
-      //if (ImGui::IsWindowHovered() && ImGui::IsItemHovered())
-      //  PSTC_CORE_INFO("Window hovered!");
+      
+      ImGuiWindowFlags viewportWindowFlags = 0;
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
-      ImGui::Image((void*)framebuffer->GetColorAttachment()->GetRendererID(), ImVec2(colorTextDesc.Width, colorTextDesc.Height), ImVec2(0, 1), ImVec2(1, 0));
+      ImGui::Begin("Viewport", nullptr, viewportWindowFlags);
+      //ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+      ImVec2 viewportPanelSize = ImGui::GetWindowSize();
+      m_ViewportWidth = viewportPanelSize.x;
+      m_ViewportHeight = viewportPanelSize.y;
+      
+      // Attachment* presentTexture = window.GetDevice().RequestAttachment("SpritePassColorAttachment");
+      std::string texName = std::string(m_PresentTextureNames[selectedPresentTextureIndex]);
+      Attachment* presentTexture = window.GetDevice().RequestAttachment(texName);
+      if (presentTexture)
+        ImGui::Image((void*)presentTexture->RendererID, viewportPanelSize, ImVec2(0, 1), ImVec2(1, 0));
+      
+      if (ImGui::IsWindowHovered() && ImGui::IsItemHovered() && ImGui::IsMouseClicked(0))
+      {
+        ViewportMouseClickEvent e
+        {
+          Input::ButtonAction::KeyPressed,
+          Input::MouseCode::ButtonLeft,
+          0,
+          ImGui::GetMousePos().x,
+          ImGui::GetMousePos().y
+        };
+        OnViewportMouseClickEvent(e, window);
+      }
+
+      ViewportMouseScrollEvent e = {window.GetScrollX(), window.GetScrollY()};
+      if (ImGui::IsWindowHovered() && ImGui::IsItemHovered() && std::abs(e.yoffset) > 0.1)
+      {
+        OnViewportScrollEvent(e);
+        ImGui::SetItemUsingMouseWheel();
+      }
+
       ImGui::End();
+      ImGui::PopStyleVar();
 
+      ViewportMouseMoveEvent posEvent{ ImGui::GetMousePos().x, ImGui::GetMousePos().y };
+      if (cameraControllerOrbit.enabled && ImGui::IsMouseDown(0))
+      {
+        OnViewportMouseMoveEvent(posEvent);
+      }
+
+      if (cameraControllerOrbit.enabled && !ImGui::IsMouseDown(0))
+      {
+        ViewportMouseClickEvent e
+        {
+          Input::ButtonAction::KeyReleased,
+          Input::MouseCode::ButtonLeft,
+          0,
+          posEvent.x,
+          posEvent.y
+        };
+        OnViewportMouseClickEvent(e, window);
+      }
     }
   };
 
   Pistacio::Application* Pistacio::ApplicationFactory::doCreate()
   {
-    Sandbox* sandbox = new Sandbox("Sandbox App", 1080, 720);
+    SampleTriangleLayer* sampleTriangleLayer = new SampleTriangleLayer(1280, 720);
 
-    SampleTriangleLayer* sampleTriangleLayer = new SampleTriangleLayer(1080, 720);
-
-    Application::Get()->GetEventLibrary().Subscribe<KeyEvent>([](KeyEvent e)
-      {
-        if (e.key == Input::KeyCode::Escape && e.action == Input::ButtonAction::KeyPressed)
-          Application::Get()->GetEventLibrary().Publish<WindowCloseEvent>(WindowCloseEvent{});
-        return true;
-      }
-    );
+    Sandbox* sandbox = new Sandbox("Sandbox App", 1280, 720);
 
     sandbox->AddLayer(sampleTriangleLayer);
 
