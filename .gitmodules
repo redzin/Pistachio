@@ -4,12 +4,9 @@
 [submodule "Pistacio/vendor/GLFW"]
 	path = Pistachio/vendor/GLFW/GLFW
 	url = https://github.com/glfw/glfw.git
-[submodule "Pistacio/vendor/imgui/imgui"]
-	path = Pistachio/vendor/imgui/imgui
-	url = https://github.com/ocornut/imgui.git
-[submodule "Pistacio/vendor/entt"]
-	path = Pistacio/vendor/entt
-	url = https://github.com/skypjack/entt.git
 [submodule "Pistacio/vendor/json"]
 	path = Pistachio/vendor/json
 	url = https://github.com/nlohmann/json.git
+[submodule "Pistachio/vendor/imgui/ImGui"]
+	path = Pistachio/vendor/imgui/ImGui
+	url = https://github.com/ocornut/imgui.git
