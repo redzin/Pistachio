@@ -3,6 +3,7 @@
 #include "pch.h"
 #include "../SceneComponents/SpriteComponent.h"
 #include "../SceneComponents/SceneComponents.h"
+#include "../SceneComponents/Camera/Camera.h"
 
 namespace Pistachio
 {
@@ -51,9 +52,6 @@ namespace Pistachio
     };
 
     SpritePassData m_SpritePassData;
-
-  private:
-    Ref<Buffer> PerFrameUniformBuffer;
 
   private:
 

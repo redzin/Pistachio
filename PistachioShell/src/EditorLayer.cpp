@@ -14,6 +14,43 @@ namespace Pistachio
     m_SceneRenderer = CreateScope<SceneRenderer>(device);
     m_Dockspace = CreateScope<MainDockspace>(eventLib);
 
+    m_Camera.reset(new Camera(
+      std::move(
+            m_CameraOrbitController.CreatePerspectiveCamera(
+              device,
+              glm::vec3(0),
+              glm::vec3(0.0f, 0.0f, -1.0f),
+              fovY,
+              m_Viewport.GetWidth(),
+              m_Viewport.GetHeight(),
+              zNear,
+              zFar
+          )
+        )
+      )
+    );
+
+
+    //SceneEntity editorCameraEntity = m_Scene.CreateEntity();
+    //editorCameraEntity.AddComponent<PrimaryCameraTag>();
+    //editorCameraEntity.AddComponent<CameraOrbitController>();
+    //CameraOrbitController& camOrbitController = editorCameraEntity.GetComponent<CameraOrbitController>();
+    //editorCameraEntity.AddComponent<Camera>(
+    //  std::move(
+    //    camOrbitController.CreatePerspectiveCamera(
+    //      device,
+    //      glm::vec3(0),
+    //      glm::vec3(0.0f, 0.0f, -1.0f),
+    //      fovY,
+    //      m_Viewport.GetWidth(),
+    //      m_Viewport.GetHeight(),
+    //      zNear,
+    //      zFar
+    //    )
+    //  )
+    //);
+
+
     eventLib.Subscribe<KeyEvent>([&eventLib](KeyEvent e)
       {
         if (e.key == Input::KeyCode::Escape && e.action == Input::ButtonAction::KeyPressed)
@@ -30,7 +67,6 @@ namespace Pistachio
         switch (e.ExampleScene)
         {
         case ExampleScene::None:
-
           break;
         case ExampleScene::Box:
           break;
@@ -110,22 +146,32 @@ namespace Pistachio
   void EditorLayer::OnUpdate(std::chrono::duration<float> dt)
   {
 
-    camera = CameraController_Pan::UpdateCamera(camera, dt, cameraControllerPan);
-    cameraControllerPan = CameraController_Pan::UpdateState(dt, cameraControllerPan);
-    CameraController_Orbit::UpdateCamera(camera, dt, cameraControllerOrbit);
+    uint32_t viewportWidth = m_Viewport.GetWidth();
+    uint32_t viewportHeight = m_Viewport.GetHeight();
+
+    m_CameraOrbitController.UpdateCamera(*m_Camera, dt);
+
+    if (m_Camera->ViewportDimensions.x != viewportWidth || m_Camera->ViewportDimensions.y != viewportHeight)
+      m_Camera->UpdateProjection(fovY, viewportWidth, viewportHeight, zNear, zFar);
+
+    //auto primaryCameraView = m_Scene.GetView<Camera, CameraOrbitController, PrimaryCameraTag>();
+    //for (const auto& entityID : primaryCameraView)
+    //{
+    //  Camera& camera = primaryCameraView.get<Camera>(entityID);
+    //  CameraOrbitController& cameraOrbitController = primaryCameraView.get<CameraOrbitController>(entityID);
+    //
+    //  cameraOrbitController.UpdateCamera(camera, dt);
+    //
+    //  if (camera.ViewportDimensions.x != viewportWidth || camera.ViewportDimensions.y != viewportHeight)
+    //    camera.UpdateProjection(fovY, viewportWidth, viewportHeight, zNear, zFar);
+    //
+    //}
 
   }
 
   void EditorLayer::OnRender(Device& device, Window& window)
   {
-    uint32_t viewportWidth = m_Viewport.GetWidth();
-    uint32_t viewportHeight = m_Viewport.GetHeight();
-    if (camera.viewport.x != viewportWidth || camera.viewport.y != viewportHeight)
-    {
-      camera = PerspectiveCamera::NewPerspective(camera, fovY, viewportWidth, viewportHeight, zNear, zFar);
-    }
-
-    m_SceneRenderer->Render(device, m_Scene, camera, viewportWidth, viewportHeight, m_ClearColor);
+    m_SceneRenderer->Render(device, m_Scene, *m_Camera, m_Camera->ViewportDimensions.x, m_Camera->ViewportDimensions.y, m_ClearColor);
 
   }
 
@@ -150,14 +196,14 @@ namespace Pistachio
     ImGui::Begin("Temp Debug Panel");
     static int selectedPresentTextureIndex = 0;
     ImGui::ListBox("Display texture", &selectedPresentTextureIndex, attachmentNames.data(), attachmentNames.size(), 3);
-    ImGui::Text("Primary camera location: (%.2f, %.2f, %.2f)", camera.position.x, camera.position.y, camera.position.z);
+    ImGui::Text("Primary camera location: (%.2f, %.2f, %.2f)", m_Camera->Position.x, m_Camera->Position.y, m_Camera->Position.z);
     ImGui::End();
 
     if (attachmentNames.size() > 0)
     {
       std::string texName = std::string(attachmentNames[selectedPresentTextureIndex]);
       Ref<Attachment> activeDisplayAttachment = sceneAttachments[texName];
-      m_Viewport.Render(window, cameraControllerOrbit, activeDisplayAttachment);
+      m_Viewport.Render(window, m_CameraOrbitController, activeDisplayAttachment);
     }
 
 

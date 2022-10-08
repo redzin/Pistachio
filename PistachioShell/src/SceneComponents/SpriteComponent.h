@@ -30,7 +30,7 @@ namespace Pistachio
     {
       uint32_t* texIdxGpuPtr = (uint32_t*)TexCoordIndexBuffer->MemoryPtr;
       glm::mat4* transformGpuPtr = (glm::mat4*)TransformBuffer->MemoryPtr;
-
+    
       memcpy(texIdxGpuPtr, samplerIndices.data(), samplerIndices.size() * sizeof(uint32_t));
       memcpy(transformGpuPtr, transforms.data(), transforms.size() * sizeof(glm::mat4));
     }

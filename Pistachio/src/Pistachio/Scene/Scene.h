@@ -18,6 +18,12 @@ namespace Pistachio
     {
       return m_Registry.view<Components...>();
     }
+
+    template<typename... Components>
+    auto GetComponents(EntityID id)
+    {
+      return m_Registry.get<Components...>(id);
+    }
     
   private:
     template<typename ...T>

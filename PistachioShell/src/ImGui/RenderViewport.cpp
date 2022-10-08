@@ -3,7 +3,7 @@
 namespace Pistachio
 {
 
-  bool Viewport::OnViewportMouseClickEvent(ViewportMouseClickEvent& e, Window& window, CameraController_Orbit& cameraControllerOrbit)
+  bool Viewport::OnViewportMouseClickEvent(ViewportMouseClickEvent& e, Window& window, CameraOrbitController& cameraOrbitController)
   {
     if (e.action == Input::ButtonAction::KeyPressed && e.mouseKey == Input::MouseCode::ButtonRight)
     {
@@ -13,7 +13,7 @@ namespace Pistachio
     }
     else if (e.action == Input::ButtonAction::KeyPressed && e.mouseKey == Input::MouseCode::ButtonLeft)
     {
-      cameraControllerOrbit = CameraController_Orbit::Enable(cameraControllerOrbit, e.x, e.y);
+      cameraOrbitController.Enable(e.x, e.y);
       window.HideCursor();
     }
     else if (e.action == Input::ButtonAction::KeyReleased && e.mouseKey == Input::MouseCode::ButtonRight)
@@ -23,27 +23,26 @@ namespace Pistachio
     }
     else if (e.action == Input::ButtonAction::KeyReleased && e.mouseKey == Input::MouseCode::ButtonLeft)
     {
-      cameraControllerOrbit = CameraController_Orbit::Disable(cameraControllerOrbit, e.x, e.y);
+      cameraOrbitController.Disable(e.x, e.y);
       window.ShowCursor();
     }
 
     return true;
   }
 
-  bool Viewport::OnViewportMouseMoveEvent(ViewportMouseMoveEvent& e, CameraController_Orbit& cameraControllerOrbit)
+  bool Viewport::OnViewportMouseMoveEvent(ViewportMouseMoveEvent& e, CameraOrbitController& cameraOrbitController)
   {
-    //cameraControllerPan = CameraController_Pan::OnMouseMoveEvent(cameraControllerPan, e);
-    cameraControllerOrbit = CameraController_Orbit::OnMouseMoveEvent(cameraControllerOrbit, e);
+    cameraOrbitController.OnMouseMoveEvent(e);
     return true;
   }
 
-  bool Viewport::OnViewportScrollEvent(ViewportMouseScrollEvent& e, CameraController_Orbit& cameraControllerOrbit)
+  bool Viewport::OnViewportScrollEvent(ViewportMouseScrollEvent& e, CameraOrbitController& cameraOrbitController)
   {
-    cameraControllerOrbit = CameraController_Orbit::OnMouseScrollEvent(cameraControllerOrbit, e);
+    cameraOrbitController.OnMouseScrollEvent(e);
     return true;
   }
 
-  void Viewport::Render(Window& window, CameraController_Orbit& cameraControllerOrbit, Ref<Attachment> presentTexture)
+  void Viewport::Render(Window& window, CameraOrbitController& cameraControllerOrbit, Ref<Attachment> presentTexture)
   {
 
     ImGuiWindowFlags viewportWindowFlags = 0;
@@ -82,12 +81,12 @@ namespace Pistachio
     ImGui::PopStyleVar();
 
     ViewportMouseMoveEvent posEvent{ ImGui::GetMousePos().x, ImGui::GetMousePos().y };
-    if (cameraControllerOrbit.enabled && ImGui::IsMouseDown(0))
+    if (cameraControllerOrbit.Enabled && ImGui::IsMouseDown(0))
     {
       OnViewportMouseMoveEvent(posEvent, cameraControllerOrbit);
     }
 
-    if (cameraControllerOrbit.enabled && !ImGui::IsMouseDown(0))
+    if (cameraControllerOrbit.Enabled && !ImGui::IsMouseDown(0))
     {
       ViewportMouseClickEvent e
       {

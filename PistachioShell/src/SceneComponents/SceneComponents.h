@@ -9,7 +9,5 @@ namespace Pistachio
 
   struct TransparentRenderableComponent { };
 
-
-
 }
 

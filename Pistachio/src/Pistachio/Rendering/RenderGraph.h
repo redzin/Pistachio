@@ -1,8 +1,6 @@
 #pragma once
 #include "pch.h"
 
-#include "Pistachio/Scene/Camera/Camera.h"
-
 namespace Pistachio
 {
   /*

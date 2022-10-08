@@ -1,11 +1,9 @@
 #pragma once
 #include "Pistachio/Rendering/RenderGraph.h"
-#include "Pistachio/Scene/Camera/CameraController_Pan.h"
-#include "Pistachio/Scene/Camera/CameraController_Zoom.h"
-#include "Pistachio/Scene/Camera/CameraController_Orbit.h"
-//#include "Rendering/SpritePass.h"
 #include "SceneComponents/SceneComponents.h"
 #include "SceneComponents/SpriteComponent.h"
+#include "SceneComponents/Camera/Camera.h"
+#include "SceneComponents/Camera/CameraOrbitController.h"
 #include "Rendering/SceneRenderer.h"
 #include "ImGui/MainDockspace.h"
 #include "ImGui/RenderViewport.h"
@@ -24,13 +22,11 @@ namespace Pistachio
     glm::vec4 m_ClearColor{ 0.65f, 0.88f, 0.92f, 1.00f };
 
     // Camera variables
-    Camera camera;
+    Ref<Camera> m_Camera;
+    CameraOrbitController m_CameraOrbitController;
     inline static constexpr float fovY = 70;
     inline static constexpr float zNear = 0.1f;
     inline static constexpr float zFar = 1000.0f;
-    CameraController_Pan cameraControllerPan;
-    CameraController_Zoom cameraControllerZoom;
-    CameraController_Orbit cameraControllerOrbit;
 
     // ImGui Panels
     Scope<MainDockspace> m_Dockspace;
@@ -45,17 +41,7 @@ namespace Pistachio
     const char* GetName() const { return "EditorLayer"; }
 
     EditorLayer(uint32_t width, uint32_t height)
-      : cameraControllerOrbit(CameraController_Orbit()), camera(
-        CameraController_Orbit::CreateCamera(
-          CameraController_Orbit(),
-          glm::vec3(0),
-          glm::vec3(0.0f, 0.0f, -1.0f),
-          fovY,
-          width,
-          height,
-          zNear,
-          zFar)
-      ), m_Viewport(Viewport(width, height))
+      : m_Viewport(Viewport(width, height))
     {
     }
 

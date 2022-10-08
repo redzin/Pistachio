@@ -5,10 +5,6 @@ namespace Pistachio
 
   SceneRenderer::SceneRenderer(Device& device)
   {
-    BufferDescriptor perFrameBufferDesc;
-    perFrameBufferDesc.Size = 4 * 4 * 4;
-    perFrameBufferDesc.Flags = MAP_WRITE_BIT | MAP_PERSISTENT_BIT | MAP_COHERENT_BIT;
-    PerFrameUniformBuffer = device.CreateBuffer(perFrameBufferDesc);
   }
 
   std::map<std::string, Ref<Attachment>> SceneRenderer::GetDisplayReadyAttachments()
@@ -66,18 +62,13 @@ namespace Pistachio
     //m_RenderGraph = RenderGraph();
     m_SpritePassData.RenderPass->SetRenderState(m_SpritePassData.RenderPassState);
     m_SpritePassData.RenderPass->SetShaderProgram("assets/shaders/SpriteInstanced.glsl");
-    
-    // Copy data to uniform buffer
-    glm::mat4 viewProjectionMatrix = camera.projectionMatrix * camera.viewMatrix;
-    glm::mat4* gpuVPMatrix = (glm::mat4*)PerFrameUniformBuffer->MemoryPtr;
-    memcpy(gpuVPMatrix, &viewProjectionMatrix[0], sizeof(glm::mat4));
 
-    m_SpritePassData.RenderPass->RecordCommandBuffer([&clearColor, this](Device& device, RenderingAPI& api)
+    m_SpritePassData.RenderPass->RecordCommandBuffer([&clearColor, &camera, this](Device& device, RenderingAPI& api)
       {
         api.SetClearColor(clearColor);
         api.SetClearDepth(1.0f);
         api.Clear(COLOR_BUFFER | DEPTH_BUFFER);
-        api.SetBufferUniformBinding(PerFrameUniformBuffer->RendererID, 0);
+        api.SetBufferUniformBinding(camera.ViewProjectionBuffer->RendererID, 0);
       }
     );
 
