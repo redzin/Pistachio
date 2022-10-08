@@ -1,5 +1,4 @@
 project "ImGui"
-	location "ImGui"
 	kind "StaticLib"
 	language "C++"
 
