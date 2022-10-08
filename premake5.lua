@@ -1,4 +1,4 @@
-workspace "Pistacio"
+workspace "Pistachio"
 	architecture "x86_64"
 	startproject "CounterApp"
 	configurations
@@ -12,16 +12,16 @@ workspace "Pistacio"
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 IncludeDir = {}
-IncludeDir["GLFW"] = "%{wks.location}/Pistacio/vendor/GLFW/GLFW/include"
-IncludeDir["glad"] = "%{wks.location}/Pistacio/vendor/glad/glad/include"
-IncludeDir["ImGui"] = "%{wks.location}/Pistacio/vendor/ImGui/ImGui"
-IncludeDir["glm"] = "%{wks.location}/Pistacio/vendor/glm"
-IncludeDir["stb_image"] = "%{wks.location}/Pistacio/vendor/stb_image"
-IncludeDir["entt"] = "%{wks.location}/Pistacio/vendor/entt"
-IncludeDir["json"] = "%{wks.location}/Pistacio/vendor/json/include"
+IncludeDir["GLFW"] = "%{wks.location}/Pistachio/vendor/GLFW/GLFW/include"
+IncludeDir["glad"] = "%{wks.location}/Pistachio/vendor/glad/glad/include"
+IncludeDir["ImGui"] = "%{wks.location}/Pistachio/vendor/ImGui/ImGui"
+IncludeDir["glm"] = "%{wks.location}/Pistachio/vendor/glm"
+IncludeDir["stb_image"] = "%{wks.location}/Pistachio/vendor/stb_image"
+IncludeDir["entt"] = "%{wks.location}/Pistachio/vendor/entt"
+IncludeDir["json"] = "%{wks.location}/Pistachio/vendor/json/include"
 
-project "Pistacio"
-	location "Pistacio"
+project "Pistachio"
+	location "Pistachio"
 	kind "StaticLib"
 	language "C++"
 	cppdialect "C++20"
@@ -30,7 +30,7 @@ project "Pistacio"
 	objdir ("bin/" .. outputdir .. "/%{prj.name}")
 	
 	pchheader "pch.h"
-	pchsource "Pistacio/src/pch.cpp"
+	pchsource "Pistachio/src/pch.cpp"
 	
 	files
 	{
@@ -97,11 +97,10 @@ project "Pistacio"
 		symbols "On"
 		
 
-include "Pistacio/vendor/GLFW"
-include "Pistacio/vendor/glad"
-include "Pistacio/vendor/ImGui"
-include "Pistacio/vendor/tinygltf"
+include "Pistachio/vendor/GLFW"
+include "Pistachio/vendor/glad"
+include "Pistachio/vendor/ImGui"
 
 include "Samples/Counter"
-include "Samples/Sandbox"
+include "PistachioShell"
 

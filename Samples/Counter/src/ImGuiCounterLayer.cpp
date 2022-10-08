@@ -1,12 +1,12 @@
 #include "pch.h"
-#include "Pistacio/Core/Application.h"
+#include "Pistachio/Core/Application.h"
 #include "ImGuiCounterLayer.h"
 
 #include <Windows.h>
 #include <iostream>
 #include <conio.h>
 
-namespace Pistacio
+namespace Pistachio
 {
   using namespace std::chrono_literals;
 

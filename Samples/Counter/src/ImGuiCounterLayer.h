@@ -2,7 +2,7 @@
 #include "pch.h"
 #include "imgui.h"
 
-namespace Pistacio
+namespace Pistachio
 {
   class ImGuiCounterLayer : public Layer
   {
