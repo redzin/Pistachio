@@ -1,3 +1,12 @@
 [submodule "Pistachio/vendor/imgui/ImGui"]
 	path = Pistachio/vendor/imgui/ImGui
 	url = https://github.com/ocornut/imgui.git
+[submodule "Pistachio/vendor/GLFW/GLFW"]
+	path = Pistachio/vendor/GLFW/GLFW
+	url = https://github.com/glfw/glfw.git
+[submodule "Pistachio/vendor/json"]
+	path = Pistachio/vendor/json
+	url = https://github.com/nlohmann/json.git
+[submodule "Pistachio/vendor/spdlog"]
+	path = Pistachio/vendor/spdlog
+	url = https://github.com/gabime/spdlog
