@@ -5,23 +5,12 @@ namespace Pistachio
 
   bool Viewport::OnViewportMouseClickEvent(ViewportMouseClickEvent& e, Window& window, CameraOrbitController& cameraOrbitController)
   {
-    if (e.action == Input::ButtonAction::KeyPressed && e.mouseKey == Input::MouseCode::ButtonRight)
-    {
-      // do not use for now
-      // cameraControllerPan = CameraController_Pan::Enable(cameraControllerPan);
-      window.HideCursor();
-    }
-    else if (e.action == Input::ButtonAction::KeyPressed && e.mouseKey == Input::MouseCode::ButtonLeft)
+    if (e.action == Input::ButtonAction::KeyPressed && e.mouseKey == Input::MouseCode::ButtonLeft)
     {
       cameraOrbitController.Enable(e.x, e.y);
       window.HideCursor();
     }
-    else if (e.action == Input::ButtonAction::KeyReleased && e.mouseKey == Input::MouseCode::ButtonRight)
-    {
-      //cameraControllerPan = CameraController_Pan::Disable(cameraControllerPan);
-      window.ShowCursor();
-    }
-    else if (e.action == Input::ButtonAction::KeyReleased && e.mouseKey == Input::MouseCode::ButtonLeft)
+    if (e.action == Input::ButtonAction::KeyReleased && e.mouseKey == Input::MouseCode::ButtonLeft)
     {
       cameraOrbitController.Disable(e.x, e.y);
       window.ShowCursor();
@@ -64,8 +53,8 @@ namespace Pistachio
         Input::ButtonAction::KeyPressed,
         Input::MouseCode::ButtonLeft,
         0,
-        ImGui::GetMousePos().x,
-        ImGui::GetMousePos().y
+        window.GetMouseX(),
+        window.GetMouseY()
       };
       OnViewportMouseClickEvent(e, window, cameraControllerOrbit);
     }
@@ -80,7 +69,7 @@ namespace Pistachio
     ImGui::End();
     ImGui::PopStyleVar();
 
-    ViewportMouseMoveEvent posEvent{ ImGui::GetMousePos().x, ImGui::GetMousePos().y };
+    ViewportMouseMoveEvent posEvent{ window.GetMouseX(), window.GetMouseY() };
     if (cameraControllerOrbit.Enabled && ImGui::IsMouseDown(0))
     {
       OnViewportMouseMoveEvent(posEvent, cameraControllerOrbit);

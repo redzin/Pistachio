@@ -6,7 +6,30 @@ namespace Pistachio
 
   void CameraOrbitController::UpdateCamera(Camera& camera, std::chrono::duration<float> dt)
   {
-    if (m_Dx == 0 && m_Dy == 0 && m_Dz == 0)
+
+    if (std::abs(m_Dx) > 0 || std::abs(m_Dy) > 0)
+      m_ZeroVelocityTimer = Timer();
+
+    int zeroVelocityTime = m_ZeroVelocityTimer.getElapsed<std::chrono::milliseconds>();
+
+    if (zeroVelocityTime > 0)
+      PSTC_INFO("zeroVelocityTime = {0}", zeroVelocityTime);
+
+    if (zeroVelocityTime > 100)
+    {
+      m_Prev_Dx = 0;
+      m_Prev_Dy = 0;
+    }
+    else
+    {
+      // framerate independent drag
+      // see: https://stackoverflow.com/questions/43960217/framerate-independent-acceleration-decceleration
+      double temp2 = std::pow(0.0001, dt.count());
+      m_Prev_Dx = m_Prev_Dx * temp2;
+      m_Prev_Dy = m_Prev_Dy * temp2;
+    }
+
+    if (m_Enabled && m_Dx == 0 && m_Dy == 0 && m_Dz == 0 && m_Prev_Dx == 0 && m_Prev_Dy == 0)
       return;
 
     float temp = m_Enabled ? 1.0f : -std::log(m_RotationalSpeedRemainingAfterOneSecond);
@@ -15,24 +38,19 @@ namespace Pistachio
     double yaw = glm::degrees(glm::atan(camera.Direction.z, camera.Direction.x));
     double pitch = glm::degrees(glm::asin(camera.Direction.y));
 
-    double dx = m_Dx_prev;
-    double dy = m_Dy_prev;
-
-    yaw += dx * m_MouseSpeed * dt_factor / temp;
-    pitch += dy * m_MouseSpeed * dt_factor / temp;
+    yaw += m_Dx * m_MouseSpeed * dt_factor / temp;
+    pitch += m_Dy * m_MouseSpeed * dt_factor / temp;
 
     if (m_Enabled)
     {
-      m_Dx_prev = 0;
-      m_Dy_prev = 0;
+      m_Dx = 0;
+      m_Dy = 0;
+
     }
     else
     {
-      // framerate independent drag
-      // see: https://stackoverflow.com/questions/43960217/framerate-independent-acceleration-decceleration
-      double temp2 = std::pow(0.0001, dt.count());
-      m_Dx_prev = m_Dx_prev * temp2;
-      m_Dy_prev = m_Dy_prev * temp2;
+      m_Dx = m_Prev_Dx;
+      m_Dy = m_Prev_Dy;
     }
 
 
@@ -63,20 +81,17 @@ namespace Pistachio
       sin(yawRad + glm::half_pi<double>())
     ));
 
-
     glm::vec3 target = camera.Position + camera.Direction * m_Radius;
-
 
     float temp3 = m_RotationalSpeedRemainingAfterOneSecond == 1.0 ? 1.0f : std::log(m_RotationalSpeedRemainingAfterOneSecond);
     m_Radius += m_ZoomSpeed * dt.count() * m_Dz / temp3;
-    if (m_Radius < 0) m_Radius = 0;
-
+    if (m_Radius < 0)
+      m_Radius = 0;
+    
     glm::vec3 newPosition = target - newDirection * m_Radius;
 
-    //CameraController_Orbit newState = state;
     // see: https://stackoverflow.com/questions/43960217/framerate-independent-acceleration-decceleration
     m_Dz = m_Dz * std::pow(m_RotationalSpeedRemainingAfterOneSecond, dt.count());
-
 
     //Validate
     bool valid_pos = !isnan(newPosition.x) && !isnan(newPosition.y) && !isnan(newPosition.z);
@@ -91,25 +106,22 @@ namespace Pistachio
 
   void CameraOrbitController::OnMouseMoveEvent(MouseMoveEvent& e)
   {
-
     if (!m_Enabled)
       return;
 
-    double x = e.x;
-    double y = e.y;
-    
-    double dx = x - m_LastX;
-    double dy = m_LastY - y;
+    double dx = e.x - m_X;
+    double dy = m_Y - e.y;
+    m_Prev_Dx = std::abs(dx) > std::abs(m_Prev_Dx) ? dx : m_Prev_Dx;
+    m_Prev_Dy = std::abs(dy) > std::abs(m_Prev_Dy) ? dy : m_Prev_Dy;
 
     if (std::abs(dx) < 1 && std::abs(dy) < 1)
       return;
+    
 
-    m_Dx_prev = m_Dx;
-    m_Dy_prev = m_Dy;
     m_Dx = dx;
     m_Dy = dy;
-    m_LastX = x;
-    m_LastY = y;
+    m_X = e.x;
+    m_Y = e.y;
   }
 
   void CameraOrbitController::OnMouseScrollEvent(MouseScrollEvent e)
@@ -121,33 +133,18 @@ namespace Pistachio
   void CameraOrbitController::Enable(double x, double y)
   {
     CameraOrbitController newState;
-    m_LastX = x;
-    m_LastY = y;
-    m_Enabled = true;
-
-    m_MouseSpeed = newState.m_MouseSpeed;
+    m_X = x;
+    m_Y = y;
+    
     m_Dx = newState.m_Dx;
     m_Dy = newState.m_Dy;
-    m_Dx_prev = newState.m_Dx_prev;
-    m_Dy_prev = newState.m_Dy_prev;
-    m_Radius = newState.m_Radius;
-    m_RotationalSpeedRemainingAfterOneSecond = newState.m_RotationalSpeedRemainingAfterOneSecond;
-    m_ZoomSpeed = newState.m_ZoomSpeed;
     m_Dz = newState.m_Dz;
-    m_ZoomSpeedRemainingAfterOneSecond = newState.m_ZoomSpeedRemainingAfterOneSecond;
+
+    m_Enabled = true;
   }
 
   void CameraOrbitController::Disable(double x, double y)
   {
-
-    //double dx = x - lastX;
-    //double dy = lastY - y;
-    //lastX = x;
-    //lastY = y;
-
-    m_Dx_prev = m_Dx;
-    m_Dy_prev = m_Dy;
-
     m_Enabled = false;
   }
 

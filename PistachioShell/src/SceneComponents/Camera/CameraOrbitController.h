@@ -19,15 +19,16 @@ namespace Pistachio
   private:
     // Orbiting
     float m_MouseSpeed = 0.1f;
-    double m_LastX = 0;
-    double m_LastY = 0;
+    double m_X = 0;
+    double m_Y = 0;
     double m_Dx = 0;
     double m_Dy = 0;
-    double m_Dx_prev = 0;
-    double m_Dy_prev = 0;
+    double m_Prev_Dx = 0;
+    double m_Prev_Dy = 0;
     float m_Radius = 5;
     bool m_Enabled = false;
     float m_RotationalSpeedRemainingAfterOneSecond = 0.005;
+    Timer m_ZeroVelocityTimer;
 
     // Zooming
     float m_ZoomSpeed = 10.f;

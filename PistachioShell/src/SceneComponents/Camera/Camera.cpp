@@ -58,17 +58,17 @@ namespace Pistachio
 
   void Camera::UpdateViewBuffer()
   {
-    memcpy(ViewProjectionBuffer->MemoryPtr, &View[0], sizeof(glm::mat4));
+    memcpy(ViewProjectionBuffer->MemoryPtr, &m_View[0], sizeof(glm::mat4));
   }
 
   void Camera::UpdateProjectionBuffer()
   {
-    memcpy(ViewProjectionBuffer->MemoryPtr, &Projection[0], sizeof(glm::mat4));
+    memcpy(ViewProjectionBuffer->MemoryPtr, &m_Projection[0], sizeof(glm::mat4));
   }
 
   void Camera::UpdateViewProjectionBuffer()
   {
-    glm::mat4 viewProjection = Projection * View;
+    glm::mat4 viewProjection = m_Projection * m_View;
     memcpy(ViewProjectionBuffer->MemoryPtr, &viewProjection[0], sizeof(glm::mat4));
   }
 
@@ -92,9 +92,13 @@ namespace Pistachio
     bool dir_not_zero = glm::dot(direction, direction) != 0;
     PSTC_ASSERT(dir_not_zero, "Cannot set camera direction to zero!");
 
+    m_Position = position;
+    m_Right = right;
+    m_Direction = direction;
     m_Up = glm::cross(right, direction);
     m_View = glm::lookAt(position, position + direction, Up);
     UpdateViewBuffer();
+    UpdateViewProjectionBuffer();
   }
 
   void Camera::UpdateProjection(float fovY, uint32_t width, uint32_t height, float zNear, float zFar)
@@ -102,6 +106,7 @@ namespace Pistachio
     m_Projection = glm::perspective(fovY, (float)width / height, zNear, zFar);
     m_ViewportDimensions = { width, height };
     UpdateProjectionBuffer();
+    UpdateViewProjectionBuffer();
   }
 }
 

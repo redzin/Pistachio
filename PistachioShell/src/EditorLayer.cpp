@@ -77,7 +77,7 @@ namespace Pistachio
           auto texCherno2Path = "assets/textures/ChernoLogo2.png";
           std::unordered_map<std::string, uint32_t> textureMap = { {texChernoPath, 0}, {texCherno2Path, 1} };
 
-          int max = glm::pow(2, 10);
+          int max = glm::pow(2, 1);
           float shift = max / 2.0;
 
           m_SceneRenderer->InitSpriteRenderer(device, textureMap, glm::pow(max, 2), 1024, 1024);
