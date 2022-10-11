@@ -37,4 +37,31 @@ namespace Pistachio
 
 	}
 
+	std::string ReadFile(const std::string& filepath)
+	{
+		std::string result;
+		std::ifstream inFile(filepath, std::ios::in | std::ios::binary); // ifstream closes itself due to RAII
+		if (inFile)
+		{
+			inFile.seekg(0, std::ios::end);
+			size_t Size = inFile.tellg();
+			if (Size != -1)
+			{
+				result.resize(Size);
+				inFile.seekg(0, std::ios::beg);
+				inFile.read(&result[0], Size);
+			}
+			else
+			{
+				PSTC_CORE_ERROR("Could not read from file '{0}'", filepath);
+			}
+		}
+		else
+		{
+			PSTC_CORE_ERROR("Could not open file '{0}'", filepath);
+		}
+
+		return result;
+	}
+
 }

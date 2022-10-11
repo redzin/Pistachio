@@ -12,7 +12,7 @@ namespace Pistachio
   // What is Mesh? Series of vertex buffers - positions, normals, texture coords, etc.
   // What is Material? Textures (base color, roughness, bump map, etc.)
 
-  Scene LoadScene(const std::string& path = "vendor\\gltf-Sample-Models\\2.0\\Box\\glTF\\Box.gltf");
+  Scene LoadScene(const std::string& path = "vendor/gltf-Sample-Models/2.0/Box/glTF/Box.gltf");
   
 
 }

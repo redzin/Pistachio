@@ -34,11 +34,8 @@ namespace glm
     j.at("w").get_to(vec.w);
   }
 
-  void from_json(const json& json, mat4& vec)
+  void from_json(const json& json, mat4& mat)
   {
-
-    mat4 mat;
-
     auto jsonArray = json.array();
 
     for (int i = 0; i < 4; i++)
@@ -53,9 +50,12 @@ namespace Pistachio
   void ProcessNode(const json& gltf, const uint32_t& gltfNodeIndex, const int32_t& parent = -1)
   {
     auto gltfNode = gltf.at("nodes")[gltfNodeIndex];
-    PSTC_CORE_INFO("SceneNode: {0}", gltfNode.at("name"));
+    if (gltfNode.count("name") > 0)
+      PSTC_CORE_INFO("SceneNode: {0}", gltfNode.at("name"));
+    else
+      PSTC_CORE_INFO("SceneNode: {0}", gltfNodeIndex);
 
-    glm::mat4 transform = glm::mat4(1.0f);
+    glm::mat4 transform;
     if (gltfNode.count("matrix") > 0)
     {
       transform = gltfNode.at("matrix").get<glm::mat4>();
@@ -311,9 +311,8 @@ namespace Pistachio
 
   Scene LoadScene(const std::string& path)
   {
-    auto filepath = std::filesystem::current_path();
-    std::ifstream f;
-    f.open(path);
+    std::string f = ReadFile(path);
+
     json gltf = json::parse(f);
 
     Scene scene;

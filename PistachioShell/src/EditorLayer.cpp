@@ -72,15 +72,12 @@ namespace Pistachio
       {
 
         m_Scene.Clear();
-        //m_SceneRenderer = CreateScope<SceneRenderer>(device);
-        //m_SceneRenderer->InitSpriteRenderer(device, textureMap, glm::pow(maxSpritesSqrt, 2), 1024, 1024);
-
         switch (e.ExampleScene)
         {
         case ExampleScene::None:
           break;
         case ExampleScene::ExampleGLTFLoader:
-          //LoadScene(); // wip
+          LoadScene(); // wip
           break;
         case ExampleScene::OneMillionSprites:
 
@@ -131,7 +128,7 @@ namespace Pistachio
       }
     );
 
-    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::OneMillionSprites });
+    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::ExampleGLTFLoader });
 
     PSTC_INFO("{0} attached!", GetName());
   }

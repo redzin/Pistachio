@@ -5,6 +5,7 @@
 namespace Pistachio
 {
 	Image LoadImageFromFile(const std::string& path);
+	std::string ReadFile(const std::string& filepath);
 }
 
 template<class T>
@@ -19,3 +20,4 @@ inline T remove_extension(T const& filename)
 	typename T::size_type const p(filename.find_last_of('.'));
 	return p > 0 && p != T::npos ? filename.substr(0, p) : filename;
 }
+

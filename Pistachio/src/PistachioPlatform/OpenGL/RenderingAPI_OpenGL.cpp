@@ -235,33 +235,6 @@ namespace Pistachio
 
 	}
 
-	static std::string ReadFile(const std::string& filepath)
-	{
-		std::string result;
-		std::ifstream in(filepath, std::ios::in | std::ios::binary); // ifstream closes itself due to RAII
-		if (in)
-		{
-			in.seekg(0, std::ios::end);
-			size_t Size = in.tellg();
-			if (Size != -1)
-			{
-				result.resize(Size);
-				in.seekg(0, std::ios::beg);
-				in.read(&result[0], Size);
-			}
-			else
-			{
-				PSTC_CORE_ERROR("Could not read from file '{0}'", filepath);
-			}
-		}
-		else
-		{
-			PSTC_CORE_ERROR("Could not open file '{0}'", filepath);
-		}
-
-		return result;
-	}
-
 	static std::vector<GLenum> GetShaderTypes(const std::string& source)
 	{
 		std::vector<GLenum> shaderTypes;
