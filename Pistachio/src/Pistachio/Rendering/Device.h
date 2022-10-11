@@ -10,10 +10,8 @@ namespace Pistachio
   class Window;
   class Device
   {
-    friend class RenderPass;
     friend class RenderGraph;
 
-    friend class Buffer;
     friend class Buffer;
     friend class Sampler;
     friend class Attachment;
@@ -34,19 +32,21 @@ namespace Pistachio
     void UploadSamplerData(const Ref<Sampler> sampler, const Image& image, uint32_t layer = 0);
     
     void SetViewport(int32_t xoffset, int32_t yoffset, uint32_t width, uint32_t height);
-    Ref<AttributeLayout> RequestAttributeLayout(const AttributeLayoutDescriptor& attributeDescriptor, RendererID indexBuffer = 0);
+    AttributeLayout& RequestAttributeLayout(const AttributeLayoutDescriptor& attributeDescriptor, RendererID indexBuffer = 0);
     Ref<Shader> RequestShader(const std::string& path);
+    Ref<Shader> RequestShader(const std::string& fragmentSrc, const std::string& vertexSrc);
+
+    void BeginNewFrame();
 
   private:
     Window& m_Window;
     Ref<RenderingAPI> m_RenderingAPI;
 
     // Shared objects owned by the device are requestable
-    Ref<Shader> RequestShader(const std::string& fragmentSrc, const std::string& vertexSrc);
-    Ref<Framebuffer> RequestFramebuffer(std::vector<Ref<Attachment>> attachments);
+    Framebuffer& RequestFramebuffer(std::vector<Ref<Attachment>> attachments);
     std::unordered_map<std::string, Ref<Shader>> m_Shaders;
-    std::unordered_map<Hash, Ref<Framebuffer>> m_Framebuffers; // Todo: Convert to TemporaryHashmap that auto-deletes after a few (8-ish) frames if unused
-    std::unordered_map<Hash, Ref<AttributeLayout>> m_InputLayouts; // Todo: Convert to TemporaryHashmap that auto-deletes after a few (8-ish) frames if unused
+    TemporaryHashMap<Hash, Framebuffer, 8> m_Framebuffers;
+    TemporaryHashMap<Hash, AttributeLayout, 8> m_AttributeLayouts;
 
     // These should be called from the individual ptr handle object desctructors (e.g. ~Buffer should call DeleteBuffer -> delete buffer removes it from the pool)
     void DeleteShader(Shader& shader);

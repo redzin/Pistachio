@@ -10,3 +10,6 @@
 [submodule "Pistachio/vendor/spdlog"]
 	path = Pistachio/vendor/spdlog
 	url = https://github.com/gabime/spdlog
+[submodule "PistachioShell/vendor/gltf-Sample-Models"]
+	path = PistachioShell/vendor/gltf-Sample-Models
+	url = https://github.com/KhronosGroup/glTF-Sample-Models.git

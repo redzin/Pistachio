@@ -4,6 +4,8 @@
 
 layout(std140, binding = 0) uniform CameraData
 {
+  mat4 view;
+  mat4 projection;
   mat4 projectionView;
 };
 

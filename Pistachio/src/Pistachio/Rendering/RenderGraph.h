@@ -103,6 +103,7 @@ namespace Pistachio
     void SetRenderState(RenderPassState& state);
     void SetShaderProgram(const std::string& shaderName);
     void AddAttachmentOutput(Ref<Attachment> attachment);
+    void ClearAttachmentOutputs();
     void RecordCommandBuffer(std::function<void(Device&, RenderingAPI&)> commands);
     
   private:

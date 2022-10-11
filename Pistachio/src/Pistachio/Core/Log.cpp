@@ -5,8 +5,8 @@
 
 namespace Pistachio::Logger {
 
-  Ref<spdlog::logger> s_CoreLogger;
-  Ref<spdlog::logger> s_ClientLogger;
+  std::shared_ptr<spdlog::logger> s_CoreLogger;
+  std::shared_ptr<spdlog::logger> s_ClientLogger;
 
   void Pistachio::Logger::Init()
   {
@@ -18,12 +18,12 @@ namespace Pistachio::Logger {
     s_ClientLogger->set_level(spdlog::level::trace);
   }
 
-  Ref<spdlog::logger> GetCoreLogger()
+  std::shared_ptr<spdlog::logger> GetCoreLogger()
   {
     return s_CoreLogger;
   }
 
-  Ref<spdlog::logger> GetClientLogger()
+  std::shared_ptr<spdlog::logger> GetClientLogger()
   {
     return s_ClientLogger;
   }

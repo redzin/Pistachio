@@ -23,26 +23,23 @@ namespace Pistachio
   {
 
     BufferDescriptor bufferDesc;
-    bufferDesc.Size = 4 * 4 * 4;
+    bufferDesc.Size = 4 * 4 * 4 * 3; // holds three 4x4 matrices with 4-byte entries (e.g. floats). View, Projection, Projection*View
     bufferDesc.Flags = MAP_WRITE_BIT | MAP_PERSISTENT_BIT | MAP_COHERENT_BIT;
 
-    m_ViewBuffer = device.CreateBuffer(bufferDesc, &view[0]);
-    m_ProjectionBuffer = device.CreateBuffer(bufferDesc, &projection[0]);
-    m_ViewProjectionBuffer = device.CreateBuffer(bufferDesc);
+    m_GPUBuffer = device.CreateBuffer(bufferDesc);
+
+    UpdateViewBuffer();
+    UpdateProjectionBuffer();
     UpdateViewProjectionBuffer();
   }
 
   Camera::Camera(Camera&& t) :
-  View(m_View),
-  Projection(m_Projection),
   Position(m_Position),
   Direction(m_Direction),
   Up(m_Up),
   Right(m_Right),
   ViewportDimensions(m_ViewportDimensions),
-  ViewBuffer(m_ViewBuffer),
-  ProjectionBuffer(m_ProjectionBuffer),
-  ViewProjectionBuffer(m_ViewProjectionBuffer),
+  GPUBuffer(m_GPUBuffer),
   m_View(std::move(t.m_View)),
   m_Projection(std::move(t.m_Projection)),
   m_Position(std::move(t.m_Position)),
@@ -50,26 +47,24 @@ namespace Pistachio
   m_Up(std::move(t.m_Up)),
   m_Right(std::move(t.m_Right)),
   m_ViewportDimensions(std::move(t.m_ViewportDimensions)),
-  m_ViewBuffer(std::move(t.m_ViewBuffer)),
-  m_ProjectionBuffer(std::move(t.m_ProjectionBuffer)),
-  m_ViewProjectionBuffer(std::move(t.m_ViewProjectionBuffer))
+  m_GPUBuffer(std::move(t.m_GPUBuffer))
   {
   }
 
   void Camera::UpdateViewBuffer()
   {
-    memcpy(ViewProjectionBuffer->MemoryPtr, &m_View[0], sizeof(glm::mat4));
+    memcpy(&((glm::mat4*)m_GPUBuffer->MemoryPtr)[0], &m_View[0], sizeof(glm::mat4));
   }
 
   void Camera::UpdateProjectionBuffer()
   {
-    memcpy(ViewProjectionBuffer->MemoryPtr, &m_Projection[0], sizeof(glm::mat4));
+    memcpy(&((glm::mat4*)m_GPUBuffer->MemoryPtr)[1], &m_Projection[0], sizeof(glm::mat4));
   }
 
   void Camera::UpdateViewProjectionBuffer()
   {
     glm::mat4 viewProjection = m_Projection * m_View;
-    memcpy(ViewProjectionBuffer->MemoryPtr, &viewProjection[0], sizeof(glm::mat4));
+    memcpy(&((glm::mat4*)m_GPUBuffer->MemoryPtr)[2], &viewProjection[0], sizeof(glm::mat4));
   }
 
   Camera Camera::CreatePerspectiveCamera(Device& device, glm::vec3 position, glm::vec3 target, float fovY, uint32_t width, uint32_t height, float zNear, float zFar)
@@ -107,6 +102,15 @@ namespace Pistachio
     m_ViewportDimensions = { width, height };
     UpdateProjectionBuffer();
     UpdateViewProjectionBuffer();
+  }
+
+  glm::mat4 Camera::GetView()
+  {
+    return ((glm::mat4*)m_GPUBuffer->MemoryPtr)[0];
+  }
+  glm::mat4 Camera::GetProjection()
+  {
+    return ((glm::mat4*)m_GPUBuffer->MemoryPtr)[1];
   }
 }
 

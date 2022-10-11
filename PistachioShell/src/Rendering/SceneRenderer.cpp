@@ -43,6 +43,7 @@ namespace Pistachio
       m_SpritePassData.ColorAttachment = device.CreateAttachment(colorAttachmentDesc);
       m_SpritePassData.DepthAttachment = device.CreateAttachment(depthAttachmentDesc);
 
+      m_SpritePassData.RenderPass->ClearAttachmentOutputs();
       m_SpritePassData.RenderPass->AddAttachmentOutput(m_SpritePassData.ColorAttachment);
       m_SpritePassData.RenderPass->AddAttachmentOutput(m_SpritePassData.DepthAttachment);
     }
@@ -68,39 +69,58 @@ namespace Pistachio
         api.SetClearColor(clearColor);
         api.SetClearDepth(1.0f);
         api.Clear(COLOR_BUFFER | DEPTH_BUFFER);
-        api.SetBufferUniformBinding(camera.ViewProjectionBuffer->RendererID, 0);
+        api.SetBufferUniformBinding(camera.GPUBuffer->RendererID, 0);
       }
     );
 
-    std::function<void(RenderableSpriteComponent&, EntityID&)> RenderSprites = [this, &device, &camera](RenderableSpriteComponent& spriteComponent, EntityID& spriteId)
-    {
-      m_SpritePassData.RenderPass->RecordCommandBuffer([&device, &camera, &spriteComponent, this](Device& device, RenderingAPI& api)
-        {
-          AttributeLayoutDescriptor attributeDesc;
-          attributeDesc.push_back({ m_SpritePassData.PositionBuffer, 0, 1, { {BufferDataType::Float3, "a_Position"} } });
-          attributeDesc.push_back({ m_SpritePassData.TexCoordBuffer, 1, 1, { {BufferDataType::Float2, "a_TexCoord"} } });
-          attributeDesc.push_back({ spriteComponent.TexCoordIndexBuffer, 2, 1, { {BufferDataType::UnsignedInt, "a_TexIndex"} } });
-          attributeDesc.push_back({ spriteComponent.TransformBuffer, 3, 4, { {BufferDataType::Mat4, "a_Transform"} } });
-          Ref<AttributeLayout> attributebuteLayout = device.RequestAttributeLayout(attributeDesc, m_SpritePassData.IndexBuffer->RendererID);
 
-          api.BindSampler(m_SpritePassData.Sampler->RendererID, 0);
-          api.DrawIndexedInstanced(attributebuteLayout->RendererID, 6, spriteComponent.Count(), PRIMITIVE_TRIANGLES);
-        }
-      );
-    };
 
     auto spriteView = scene.GetGroup<>(Scene::GroupGet<RenderableSpriteComponent>, Scene::GroupExclude<TransparentRenderableComponent>);
     for (EntityID spriteId : spriteView)
     {
       RenderableSpriteComponent& spriteComponent = spriteView.get<RenderableSpriteComponent>(spriteId);
-      RenderSprites(spriteComponent, spriteId);
+
+      AttributeLayoutDescriptor attributeDesc;
+      attributeDesc.push_back({ m_SpritePassData.PositionBuffer, 0, 1, { {BufferDataType::Float3, "a_Position"} } });
+      attributeDesc.push_back({ m_SpritePassData.TexCoordBuffer, 1, 1, { {BufferDataType::Float2, "a_TexCoord"} } });
+      attributeDesc.push_back({ spriteComponent.TexCoordIndexBuffer, 2, 1, { {BufferDataType::UnsignedInt, "a_TexIndex"} } });
+      attributeDesc.push_back({ spriteComponent.TransformBuffer, 3, 4, { {BufferDataType::Mat4, "a_Transform"} } });
+      AttributeLayout& attributebuteLayout = device.RequestAttributeLayout(attributeDesc, m_SpritePassData.IndexBuffer->RendererID);
+
+      uint32_t count = spriteComponent.Count();
+      RendererID samplerId = m_SpritePassData.Sampler->RendererID;
+      RendererID vao = attributebuteLayout.RendererID;
+
+      m_SpritePassData.RenderPass->RecordCommandBuffer([&device, &camera, count, samplerId, vao](Device& device, RenderingAPI& api)
+        {
+          api.BindSampler(samplerId, 0);
+          api.DrawIndexedInstanced(vao, 6, count, PRIMITIVE_TRIANGLES);
+        }
+      );
     }
 
     auto transparentSpriteView = scene.GetView<RenderableSpriteComponent, TransparentRenderableComponent>();
     for (EntityID spriteId : transparentSpriteView)
     {
       RenderableSpriteComponent& spriteComponent = transparentSpriteView.get<RenderableSpriteComponent>(spriteId);
-      RenderSprites(spriteComponent, spriteId);
+
+      AttributeLayoutDescriptor attributeDesc;
+      attributeDesc.push_back({ m_SpritePassData.PositionBuffer, 0, 1, { {BufferDataType::Float3, "a_Position"} } });
+      attributeDesc.push_back({ m_SpritePassData.TexCoordBuffer, 1, 1, { {BufferDataType::Float2, "a_TexCoord"} } });
+      attributeDesc.push_back({ spriteComponent.TexCoordIndexBuffer, 2, 1, { {BufferDataType::UnsignedInt, "a_TexIndex"} } });
+      attributeDesc.push_back({ spriteComponent.TransformBuffer, 3, 4, { {BufferDataType::Mat4, "a_Transform"} } });
+      AttributeLayout& attributebuteLayout = device.RequestAttributeLayout(attributeDesc, m_SpritePassData.IndexBuffer->RendererID);
+
+      uint32_t count = spriteComponent.Count();
+      RendererID samplerId = m_SpritePassData.Sampler->RendererID;
+      RendererID vao = attributebuteLayout.RendererID;
+
+      m_SpritePassData.RenderPass->RecordCommandBuffer([&device, &camera, count, samplerId, vao](Device& device, RenderingAPI& api)
+        {
+          api.BindSampler(samplerId, 0);
+          api.DrawIndexedInstanced(vao, 6, count, PRIMITIVE_TRIANGLES);
+        }
+      );
     }
   }
 

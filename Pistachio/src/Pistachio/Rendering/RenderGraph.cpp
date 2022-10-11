@@ -28,7 +28,9 @@ namespace Pistachio
   {
     for (const auto& pass : m_RenderPasses)
     {
-      Ref<Framebuffer> framebuffer = device.RequestFramebuffer(pass->m_AttachmentOuputs);
+      device.BeginNewFrame();
+
+      Framebuffer& framebuffer = device.RequestFramebuffer(pass->m_AttachmentOuputs);
       
       std::vector<Capability> disabledCapabilities;
       std::set_symmetric_difference(
@@ -42,7 +44,7 @@ namespace Pistachio
 
       device.m_RenderingAPI->SetViewport(0, 0, viewport_width, viewport_height);
       device.m_RenderingAPI->UseShaderProgram(device.RequestShader(pass->m_Shader->Name)->RendererID);
-      device.m_RenderingAPI->BindFramebuffer(*framebuffer);
+      device.m_RenderingAPI->BindFramebuffer(framebuffer);
 
       for (const auto& cap : disabledCapabilities)
         device.m_RenderingAPI->Disable(cap);
@@ -98,6 +100,11 @@ namespace Pistachio
   void RenderPass::AddAttachmentOutput(Ref<Attachment> attachment)
   {
     m_AttachmentOuputs.push_back(attachment);
+  }
+
+  void RenderPass::ClearAttachmentOutputs()
+  {
+    m_AttachmentOuputs.clear();
   }
 
   void RenderPass::RecordCommandBuffer(std::function<void(Device&, RenderingAPI&)> commands)

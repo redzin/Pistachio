@@ -253,11 +253,14 @@ namespace Pistachio
 
     Buffer(Device& device, Pistachio::RendererID rendererId, BufferDescriptor descriptor, void* memoryPtr)
       : m_Device(device), RendererID(rendererId), Descriptor(descriptor), MemoryPtr(memoryPtr)
-    { }
+    {
+      PSTC_INFO("GPU mapped buffer ({0}) created!", RendererID);
+    }
 
     ~Buffer();
 
   private:
+    Buffer() = delete;
     Device& m_Device;
   };
 

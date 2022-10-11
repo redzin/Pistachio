@@ -24,7 +24,12 @@ namespace Pistachio
 
     }
 
-    uint32_t Count() { return m_SpriteCount; }
+    ~RenderableSpriteComponent()
+    {
+      PSTC_TRACE("RenderableSpriteComponent destroyed!");
+    }
+
+    uint32_t Count() const { return m_SpriteCount; }
 
     void UpdateAttributes(std::vector<uint32_t> samplerIndices, std::vector<glm::mat4> transforms)
     {

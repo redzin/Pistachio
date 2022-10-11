@@ -311,8 +311,9 @@ namespace Pistachio
 
   Scene LoadScene(const std::string& path)
   {
-
-    std::ifstream f(path);
+    auto filepath = std::filesystem::current_path();
+    std::ifstream f;
+    f.open(path);
     json gltf = json::parse(f);
 
     Scene scene;

@@ -23,8 +23,8 @@ namespace Pistachio
     double m_Y = 0;
     double m_Dx = 0;
     double m_Dy = 0;
-    double m_Prev_Dx = 0;
-    double m_Prev_Dy = 0;
+    double m_DraggedDx = 0;
+    double m_DraggedDy = 0;
     float m_Radius = 5;
     bool m_Enabled = false;
     float m_RotationalSpeedRemainingAfterOneSecond = 0.005;

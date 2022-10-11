@@ -93,7 +93,7 @@ namespace Pistachio
     if (ImGui::BeginMenuBar())
     {
 
-      if (ImGui::BeginMenu("Load"))
+      if (ImGui::BeginMenu("Scene"))
       {
         if (ImGui::BeginMenu("Examples"))
         {
@@ -108,7 +108,10 @@ namespace Pistachio
             eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::OneMillionSprites });
           }
 
-          ImGui::MenuItem("Box");
+          if (ImGui::MenuItem("GLTF Example Loader"))
+          {
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::ExampleGLTFLoader });
+          }
 
           ImGui::EndMenu();
         }

@@ -8,7 +8,7 @@ namespace Pistachio
   {
     None = 0,
     OneMillionSprites = 1,
-    Box = 2
+    ExampleGLTFLoader = 2
   };
 
   struct ExampleSceneLoadEvent

@@ -58,7 +58,7 @@ namespace Pistachio
   //  
   //};
 
-  // Is this class actually better for performance than std::vector? Todo: Test
+
   template<typename T>
   class ObjectPool
   {
@@ -112,4 +112,75 @@ namespace Pistachio
     std::vector<std::unique_ptr<T, AlignedMallocDeleter>> memory; // holds pointers to each aligned block
     std::vector<T*> vacants; // holds list of pointers to all unassigned slots on the current allocated memory
   };
+
+
+  template <typename S, typename T, uint32_t LIFETIME>
+  class TemporaryHashMap
+  {
+  public:
+
+    void Advance()
+    {
+      std::vector<S> keysToDelete;
+      for (auto& [k, v] : m_Tracker)
+      {
+        if (v < LIFETIME)
+        {
+          m_Tracker[k]++;
+        }
+        else
+        {
+          keysToDelete.push_back(k);
+        }
+      }
+
+      for (const auto& k : keysToDelete)
+        Erase(k);
+    }
+
+    T& operator[](S key)
+    {
+      if (!Exists(key))
+      {
+        m_Values[key] = m_Pool.Allocate();
+      }
+
+      m_Tracker[key] = 0;
+      return *m_Values[key];
+    }
+
+    template <typename... Args>
+    void Emplace(S key, Args&& ...args)
+    {
+      m_Tracker[key] = 0;
+      m_Values[key] = m_Pool.Allocate(std::forward<Args>(args)...);
+    }
+
+    bool Exists(S key)
+    {
+      return m_Values.find(key) != m_Values.end();
+    }
+
+    void Erase(S key)
+    {
+      if (!Exists(key))
+        return;
+
+      m_Pool.Free(m_Values[key]);
+      m_Values.erase(key);
+      m_Tracker.erase(key);
+    }
+
+  private:
+
+    ObjectPool<T> m_Pool;
+    std::unordered_map<S, T*> m_Values;
+    std::unordered_map<S, uint32_t> m_Tracker;
+
+  };
+
+
+
+
 }
+

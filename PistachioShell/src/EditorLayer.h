@@ -38,7 +38,7 @@ namespace Pistachio
 
   public:
 
-    const char* GetName() const { return "EditorLayer"; }
+    const char* GetName() const { return "Main Editor Layer"; }
 
     EditorLayer(uint32_t width, uint32_t height)
       : m_Viewport(Viewport(width, height))

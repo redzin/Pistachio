@@ -10,26 +10,21 @@ namespace Pistachio
     if (std::abs(m_Dx) > 0 || std::abs(m_Dy) > 0)
       m_ZeroVelocityTimer = Timer();
 
-    int zeroVelocityTime = m_ZeroVelocityTimer.getElapsed<std::chrono::milliseconds>();
-
-    if (zeroVelocityTime > 0)
-      PSTC_INFO("zeroVelocityTime = {0}", zeroVelocityTime);
-
-    if (zeroVelocityTime > 100)
+    if (m_ZeroVelocityTimer.getElapsed<std::chrono::milliseconds>() > 25)
     {
-      m_Prev_Dx = 0;
-      m_Prev_Dy = 0;
+      m_DraggedDx = 0;
+      m_DraggedDy = 0;
     }
     else
     {
       // framerate independent drag
       // see: https://stackoverflow.com/questions/43960217/framerate-independent-acceleration-decceleration
       double temp2 = std::pow(0.0001, dt.count());
-      m_Prev_Dx = m_Prev_Dx * temp2;
-      m_Prev_Dy = m_Prev_Dy * temp2;
+      m_DraggedDx = m_DraggedDx * temp2;
+      m_DraggedDy = m_DraggedDy * temp2;
     }
 
-    if (m_Enabled && m_Dx == 0 && m_Dy == 0 && m_Dz == 0 && m_Prev_Dx == 0 && m_Prev_Dy == 0)
+    if (m_Enabled && m_Dx == 0 && m_Dy == 0 && m_Dz == 0 && m_DraggedDx == 0 && m_DraggedDy == 0)
       return;
 
     float temp = m_Enabled ? 1.0f : -std::log(m_RotationalSpeedRemainingAfterOneSecond);
@@ -49,8 +44,8 @@ namespace Pistachio
     }
     else
     {
-      m_Dx = m_Prev_Dx;
-      m_Dy = m_Prev_Dy;
+      m_Dx = m_DraggedDx;
+      m_Dy = m_DraggedDy;
     }
 
 
@@ -111,8 +106,8 @@ namespace Pistachio
 
     double dx = e.x - m_X;
     double dy = m_Y - e.y;
-    m_Prev_Dx = std::abs(dx) > std::abs(m_Prev_Dx) ? dx : m_Prev_Dx;
-    m_Prev_Dy = std::abs(dy) > std::abs(m_Prev_Dy) ? dy : m_Prev_Dy;
+    m_DraggedDx = std::abs(dx) > std::abs(m_DraggedDx) ? dx : m_DraggedDx;
+    m_DraggedDy = std::abs(dy) > std::abs(m_DraggedDy) ? dy : m_DraggedDy;
 
     if (std::abs(dx) < 1 && std::abs(dy) < 1)
       return;

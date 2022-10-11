@@ -8,8 +8,8 @@
 namespace Pistachio::Logger {
 
   void Init();
-  Ref<spdlog::logger> GetCoreLogger();
-  Ref<spdlog::logger> GetClientLogger();
+  std::shared_ptr<spdlog::logger> GetCoreLogger();
+  std::shared_ptr<spdlog::logger> GetClientLogger();
 }
 
 #define INIT_LOGGER() Logger::Init();

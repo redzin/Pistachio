@@ -1,4 +1,5 @@
-/PistachioShell/vendor
+/PistachioShell/vendor/meshes
+/PistachioShell/vendor/scenes
 
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudio
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudio

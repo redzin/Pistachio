@@ -73,6 +73,12 @@ namespace Pistachio
     return m_Shaders[path];
   }
 
+  void Device::BeginNewFrame()
+  {
+    m_Framebuffers.Advance(); // advance to delete framebuffers that have been used for at least 8 frames
+    m_AttributeLayouts.Advance(); // advance to delete attribute layouts that have not been used for at least 8 frames
+  }
+
   Ref<Shader> Device::RequestShader(const std::string& vertexSrc, const std::string& fragmentSrc)
   {
     std::string hash = "";
@@ -87,7 +93,7 @@ namespace Pistachio
     return m_Shaders[hash];
   }
 
-  Ref<Framebuffer> Device::RequestFramebuffer(std::vector<Ref<Attachment>> attachments)
+  Framebuffer& Device::RequestFramebuffer(std::vector<Ref<Attachment>> attachments)
   {
     Hasher hasher;
     for (auto const& attachment : attachments)
@@ -104,14 +110,14 @@ namespace Pistachio
     }
     Hash hash = hasher.get();
 
-    if (m_Framebuffers.find(hash) != m_Framebuffers.end())
+    if (m_Framebuffers.Exists(hash))
       return m_Framebuffers[hash];
 
-    m_Framebuffers[hash] = CreateRef<Framebuffer>(m_RenderingAPI, attachments);
+    m_Framebuffers.Emplace(hash, m_RenderingAPI, attachments);
     return m_Framebuffers[hash];
   }
 
-  Ref<AttributeLayout> Device::RequestAttributeLayout(const AttributeLayoutDescriptor& attributeDescriptor, RendererID indexBuffer)
+  AttributeLayout& Device::RequestAttributeLayout(const AttributeLayoutDescriptor& attributeDescriptor, RendererID indexBuffer)
   {
     Hasher hasher;
     hasher.hash(indexBuffer);
@@ -132,12 +138,12 @@ namespace Pistachio
     }
     Hash hash = hasher.get();
 
-    if (m_InputLayouts.find(hash) != m_InputLayouts.end())
-      return m_InputLayouts[hash];
+    if (m_AttributeLayouts.Exists(hash))
+      return m_AttributeLayouts[hash];
 
     RendererID rendererID = m_RenderingAPI->CreateAttributeLayout(indexBuffer, attributeDescriptor);
-    m_InputLayouts[hash] = CreateRef<AttributeLayout>(rendererID, attributeDescriptor);
-    return m_InputLayouts[hash];
+    m_AttributeLayouts.Emplace(hash, rendererID, attributeDescriptor);
+    return m_AttributeLayouts[hash];
   }
 
   void Device::SetViewport(int32_t xoffset, int32_t yoffset, uint32_t width, uint32_t height)

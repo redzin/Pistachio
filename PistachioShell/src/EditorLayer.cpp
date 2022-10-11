@@ -50,6 +50,15 @@ namespace Pistachio
     //  )
     //);
 
+    std::string texChechkerboardPath = "assets/textures/Checkerboard.png";
+    std::string texChernoPath = "assets/textures/ChernoLogo.png";
+    std::string texCherno2Path = "assets/textures/ChernoLogo2.png";
+    std::unordered_map<std::string, uint32_t> textureMap = { {texChernoPath, 0}, {texCherno2Path, 1} };
+
+    int maxSpritesSqrt = glm::pow(2, 10);
+    float shift = maxSpritesSqrt / 2.0;
+    m_SceneRenderer->InitSpriteRenderer(device, textureMap, glm::pow(maxSpritesSqrt, 2), 1024, 1024);
+
 
     eventLib.Subscribe<KeyEvent>([&eventLib](KeyEvent e)
       {
@@ -59,44 +68,37 @@ namespace Pistachio
       }
     );
 
-    eventLib.Subscribe<ExampleSceneLoadEvent>([&eventLib, &device, this](ExampleSceneLoadEvent e)
+    eventLib.Subscribe<ExampleSceneLoadEvent>([&eventLib, &device, textureMap, maxSpritesSqrt, shift, texChernoPath, texCherno2Path, this](ExampleSceneLoadEvent e)
       {
 
         m_Scene.Clear();
+        //m_SceneRenderer = CreateScope<SceneRenderer>(device);
+        //m_SceneRenderer->InitSpriteRenderer(device, textureMap, glm::pow(maxSpritesSqrt, 2), 1024, 1024);
 
         switch (e.ExampleScene)
         {
         case ExampleScene::None:
           break;
-        case ExampleScene::Box:
+        case ExampleScene::ExampleGLTFLoader:
+          //LoadScene(); // wip
           break;
         case ExampleScene::OneMillionSprites:
 
-          auto texChechkerboardPath = "assets/textures/Checkerboard.png";
-          auto texChernoPath = "assets/textures/ChernoLogo.png";
-          auto texCherno2Path = "assets/textures/ChernoLogo2.png";
-          std::unordered_map<std::string, uint32_t> textureMap = { {texChernoPath, 0}, {texCherno2Path, 1} };
-
-          int max = glm::pow(2, 1);
-          float shift = max / 2.0;
-
-          m_SceneRenderer->InitSpriteRenderer(device, textureMap, glm::pow(max, 2), 1024, 1024);
-
           SceneEntity spriteChernos2 = m_Scene.CreateEntity();
           spriteChernos2.AddComponent<SemanticNameComponent>("Chernos2");
-          spriteChernos2.AddComponent<RenderableSpriteComponent>(device, glm::pow(max, 2));
+          spriteChernos2.AddComponent<RenderableSpriteComponent>(device, glm::pow(maxSpritesSqrt, 2));
 
           RenderableSpriteComponent& spriteComponent2 = spriteChernos2.GetComponent<RenderableSpriteComponent>();
           glm::mat4* transforms2 = (glm::mat4*)spriteComponent2.TransformBuffer->MemoryPtr;
           uint32_t* samplerIndices2 = (uint32_t*)spriteComponent2.TexCoordIndexBuffer->MemoryPtr;
           
           Timer t;
-          for (int i = 0; i < max; i++)
+          for (int i = 0; i < maxSpritesSqrt; i++)
           {
-            for (int j = 0; j < max; j++)
+            for (int j = 0; j < maxSpritesSqrt; j++)
             {
-              transforms2[i + j * max] = glm::translate(glm::mat4(1.0f), glm::vec3(i - shift, j - shift, -0.5f));
-              samplerIndices2[i + j * max] = textureMap[texCherno2Path];
+              transforms2[i + j * maxSpritesSqrt] = glm::translate(glm::mat4(1.0f), glm::vec3(i - shift, j - shift, -0.5f));
+              samplerIndices2[i + j * maxSpritesSqrt] = textureMap.at(std::string(texCherno2Path));
             }
           }
           int loadingTime = t.getElapsed<std::chrono::milliseconds>();
@@ -129,18 +131,14 @@ namespace Pistachio
       }
     );
 
-    // Load Default
     eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::OneMillionSprites });
 
-
-    //LoadScene(); // wip
-
-    PSTC_INFO("SampleTriangleLayer attached!");
+    PSTC_INFO("{0} attached!", GetName());
   }
 
   void EditorLayer::OnDetach(Window& window, EventLibrary&)
   {
-    PSTC_INFO("SampleTriangleLayer detached!");
+    PSTC_INFO("{0} detached!", GetName());
   }
 
   void EditorLayer::OnUpdate(std::chrono::duration<float> dt)
@@ -172,7 +170,6 @@ namespace Pistachio
   void EditorLayer::OnRender(Device& device, Window& window)
   {
     m_SceneRenderer->Render(device, m_Scene, *m_Camera, m_Camera->ViewportDimensions.x, m_Camera->ViewportDimensions.y, m_ClearColor);
-
   }
 
   void EditorLayer::OnGuiRender(Window& window, EventLibrary& eventLibrary)
