@@ -13,3 +13,6 @@
 [submodule "PistachioShell/vendor/gltf-Sample-Models"]
 	path = PistachioShell/vendor/gltf-Sample-Models
 	url = https://github.com/KhronosGroup/glTF-Sample-Models.git
+[submodule "PistachioShell/vendor/tinygltf"]
+	path = PistachioShell/vendor/tinygltf
+	url = https://github.com/syoyo/tinygltf.git
