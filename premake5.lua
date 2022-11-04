@@ -19,6 +19,7 @@ IncludeDir["glm"] = "%{wks.location}/Pistachio/vendor/glm"
 IncludeDir["stb_image"] = "%{wks.location}/Pistachio/vendor/stb_image"
 IncludeDir["entt"] = "%{wks.location}/Pistachio/vendor/entt"
 IncludeDir["json"] = "%{wks.location}/Pistachio/vendor/json/include"
+IncludeDir["tinygltf"] = "%{wks.location}/PistachioShell/vendor/tinygltf"
 
 project "Pistachio"
 	location "Pistachio"
@@ -53,7 +54,8 @@ project "Pistachio"
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.stb_image}",
 		"%{IncludeDir.entt}",
-		"%{IncludeDir.json}"
+		"%{IncludeDir.json}",
+		"%{IncludeDir.tinygltf}"
 	}
 
 	links

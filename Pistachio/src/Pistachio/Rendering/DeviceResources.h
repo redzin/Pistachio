@@ -71,6 +71,10 @@ namespace Pistachio
   {
     None = 0,
     Bool,
+    Byte,
+    UnsignedByte,
+    Short,
+    UnsignedShort,
     Int,
     Int2,
     Int3,
@@ -80,29 +84,35 @@ namespace Pistachio
     Float2,
     Float3,
     Float4,
+    Double,
     Mat3,
     Mat4
   };
 
   static uint32_t ShaderDataTypeToOpenGLBaseType(BufferDataType Type)
   {
+    
+    switch (Type)
     {
-      switch (Type)
-      {
-      case BufferDataType::Bool:          return 0x8B56; // GL_BOOL
-      case BufferDataType::Int:           return 0x1404; // GL_INT
-      case BufferDataType::Int2:          return 0x1404; // GL_INT
-      case BufferDataType::Int3:          return 0x1404; // GL_INT
-      case BufferDataType::Int4:          return 0x1404; // GL_INT
-      case BufferDataType::UnsignedInt:   return 0x1405; // GL_UNSIGNED_INT
-      case BufferDataType::Float:         return 0x1406; // GL_FLOAT
-      case BufferDataType::Float2:        return 0x1406; // GL_FLOAT
-      case BufferDataType::Float3:        return 0x1406; // GL_FLOAT
-      case BufferDataType::Float4:        return 0x1406; // GL_FLOAT
-      case BufferDataType::Mat3:          return 0x1406; // GL_FLOAT
-      case BufferDataType::Mat4:          return 0x1406; // GL_FLOAT
-      }
+    case BufferDataType::Bool:          return 0x8B56; // GL_BOOL
+    case BufferDataType::Byte:          return 0x1400; // GL_BYTE
+    case BufferDataType::UnsignedByte:  return 0x1401; // GL_UNSIGNED_BYTE
+    case BufferDataType::Short:         return 0x1402; // GL_SHORT
+    case BufferDataType::UnsignedShort: return 0x1403; // GL_UNSIGNED_SHORT
+    case BufferDataType::Int:           return 0x1404; // GL_INT
+    case BufferDataType::Int2:          return 0x1404; // GL_INT
+    case BufferDataType::Int3:          return 0x1404; // GL_INT
+    case BufferDataType::Int4:          return 0x1404; // GL_INT
+    case BufferDataType::UnsignedInt:   return 0x1405; // GL_UNSIGNED_INT
+    case BufferDataType::Float:         return 0x1406; // GL_FLOAT
+    case BufferDataType::Float2:        return 0x1406; // GL_FLOAT
+    case BufferDataType::Float3:        return 0x1406; // GL_FLOAT
+    case BufferDataType::Float4:        return 0x1406; // GL_FLOAT
+    case BufferDataType::Mat3:          return 0x1406; // GL_FLOAT
+    case BufferDataType::Mat4:          return 0x1406; // GL_FLOAT
     }
+    
+    PSTC_ASSERT(false, "Unknown buffer data type!");
   }
 
   inline uint32_t ShaderDataTypeSize(const BufferDataType& Type)
@@ -239,8 +249,9 @@ namespace Pistachio
   struct BufferDescriptor
   {
     uint32_t Size = 0;
-    BufferFlag Flags = 0;
+    BufferFlag Flags = MAP_WRITE_BIT | MAP_COHERENT_BIT | MAP_PERSISTENT_BIT;
     uint32_t AttributeDivisor = 0;
+    BufferDataType DataType = BufferDataType::Float;
   };
 
   //struct GPUMemoryFence {};
@@ -467,7 +478,6 @@ namespace Pistachio
     PRIMITIVE_POINTS = 0x0000
   } DrawingPrimitiveBits;
   using DrawingPrimitive = uint32_t;
-
 
 
 

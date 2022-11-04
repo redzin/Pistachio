@@ -3,20 +3,52 @@
 namespace Pistachio
 {
 
-  static void LoadSceneOneMillionSprites()
+  Camera& EditorLayer::GetActiveCamera()
   {
+    if (m_SelectedSceneCameraIndex < 1)
+      return *m_EditorCamera;
 
+    if (m_SelectedSceneIndex >= 0 && m_SelectedSceneIndex < m_Scenes.size())
+    {
+      int i = 0;
+      auto sceneCameraView = m_Scenes[m_SelectedSceneIndex].GetView<PrimarySceneCameraTag, Camera>();
+      for (const EntityID& id : sceneCameraView)
+      {
+        return sceneCameraView.get<Camera>(id);
+      }
+    }
+
+    return *m_EditorCamera;
+  }
+
+  CameraOrbitController& EditorLayer::GetActiveCameraController()
+  {
+    if (m_SelectedSceneCameraIndex < 1)
+      return m_EditorCameraOrbitController;
+
+    if (m_SelectedSceneIndex >= 0 && m_SelectedSceneIndex < m_Scenes.size())
+    {
+      int i = 0;
+      auto sceneCameraView = m_Scenes[m_SelectedSceneIndex].GetView<PrimarySceneCameraTag, CameraOrbitController>();
+      for (const EntityID& id : sceneCameraView)
+      {
+        return sceneCameraView.get<CameraOrbitController>(id);
+      }
+    }
+
+    return m_EditorCameraOrbitController;
+    
   }
 
   void EditorLayer::OnAttach(Window& window, EventLibrary& eventLib)
   {
     Device& device = window.GetDevice();
-    m_SceneRenderer = CreateScope<SceneRenderer>(device);
+    m_SceneRenderer = CreateScope<SceneRenderer>();
     m_Dockspace = CreateScope<MainDockspace>(eventLib);
 
-    m_Camera.reset(new Camera(
+    m_EditorCamera.reset(new Camera(
       std::move(
-            m_CameraOrbitController.CreatePerspectiveCamera(
+            m_EditorCameraOrbitController.CreatePerspectiveCamera(
               device,
               glm::vec3(0),
               glm::vec3(0.0f, 0.0f, -1.0f),
@@ -30,26 +62,6 @@ namespace Pistachio
       )
     );
 
-
-    //SceneEntity editorCameraEntity = m_Scene.CreateEntity();
-    //editorCameraEntity.AddComponent<PrimaryCameraTag>();
-    //editorCameraEntity.AddComponent<CameraOrbitController>();
-    //CameraOrbitController& camOrbitController = editorCameraEntity.GetComponent<CameraOrbitController>();
-    //editorCameraEntity.AddComponent<Camera>(
-    //  std::move(
-    //    camOrbitController.CreatePerspectiveCamera(
-    //      device,
-    //      glm::vec3(0),
-    //      glm::vec3(0.0f, 0.0f, -1.0f),
-    //      fovY,
-    //      m_Viewport.GetWidth(),
-    //      m_Viewport.GetHeight(),
-    //      zNear,
-    //      zFar
-    //    )
-    //  )
-    //);
-
     std::string texChechkerboardPath = "assets/textures/Checkerboard.png";
     std::string texChernoPath = "assets/textures/ChernoLogo.png";
     std::string texCherno2Path = "assets/textures/ChernoLogo2.png";
@@ -57,8 +69,7 @@ namespace Pistachio
 
     int maxSpritesSqrt = glm::pow(2, 10);
     float shift = maxSpritesSqrt / 2.0;
-    m_SceneRenderer->InitSpriteRenderer(device, textureMap, glm::pow(maxSpritesSqrt, 2), 1024, 1024);
-
+    m_SceneRenderer->Init(device, textureMap, glm::pow(maxSpritesSqrt, 2), 1024, 1024);
 
     eventLib.Subscribe<KeyEvent>([&eventLib](KeyEvent e)
       {
@@ -71,17 +82,41 @@ namespace Pistachio
     eventLib.Subscribe<ExampleSceneLoadEvent>([&eventLib, &device, textureMap, maxSpritesSqrt, shift, texChernoPath, texCherno2Path, this](ExampleSceneLoadEvent e)
       {
 
-        m_Scene.Clear();
+        m_Scenes.clear();
         switch (e.ExampleScene)
         {
         case ExampleScene::None:
           break;
         case ExampleScene::ExampleGLTFLoader:
-          LoadScene(); // wip
+          
+          m_Scenes = m_SceneLoader.LoadGLTF(device);
+          
           break;
         case ExampleScene::OneMillionSprites:
 
-          SceneEntity spriteChernos2 = m_Scene.CreateEntity();
+          m_Scenes.push_back(Scene("One Million Sprites"));
+
+          SceneEntity sceneCamera = m_Scenes[0].CreateEntity();
+          sceneCamera.AddComponent<PrimarySceneCameraTag>();
+          sceneCamera.AddComponent<CameraOrbitController>();
+          sceneCamera.AddComponent<SemanticNameComponent>("Scene Camera");
+          CameraOrbitController& camOrbitController = sceneCamera.GetComponent<CameraOrbitController>();
+          sceneCamera.AddComponent<Camera>(
+            std::move(
+              camOrbitController.CreatePerspectiveCamera(
+                device,
+                glm::vec3(1.0f, 1.0f, 0.0f),
+                glm::vec3(0.0f, 0.0f, -1.0f),
+                fovY,
+                m_Viewport.GetWidth(),
+                m_Viewport.GetHeight(),
+                zNear,
+                zFar
+              )
+            )
+          );
+
+          SceneEntity spriteChernos2 = m_Scenes[0].CreateEntity();
           spriteChernos2.AddComponent<SemanticNameComponent>("Chernos2");
           spriteChernos2.AddComponent<RenderableSpriteComponent>(device, glm::pow(maxSpritesSqrt, 2));
 
@@ -144,29 +179,27 @@ namespace Pistachio
     uint32_t viewportWidth = m_Viewport.GetWidth();
     uint32_t viewportHeight = m_Viewport.GetHeight();
 
-    m_CameraOrbitController.UpdateCamera(*m_Camera, dt);
+    Camera& camera = GetActiveCamera();
+    CameraOrbitController& cameraOrbitController = GetActiveCameraController();
 
-    if (m_Camera->ViewportDimensions.x != viewportWidth || m_Camera->ViewportDimensions.y != viewportHeight)
-      m_Camera->UpdateProjection(fovY, viewportWidth, viewportHeight, zNear, zFar);
+    cameraOrbitController.UpdateCamera(camera, dt);
 
-    //auto primaryCameraView = m_Scene.GetView<Camera, CameraOrbitController, PrimaryCameraTag>();
-    //for (const auto& entityID : primaryCameraView)
-    //{
-    //  Camera& camera = primaryCameraView.get<Camera>(entityID);
-    //  CameraOrbitController& cameraOrbitController = primaryCameraView.get<CameraOrbitController>(entityID);
-    //
-    //  cameraOrbitController.UpdateCamera(camera, dt);
-    //
-    //  if (camera.ViewportDimensions.x != viewportWidth || camera.ViewportDimensions.y != viewportHeight)
-    //    camera.UpdateProjection(fovY, viewportWidth, viewportHeight, zNear, zFar);
-    //
-    //}
+    glm::uvec2 viewportDimensions = camera.GetViewportDimensions();
+
+    if (viewportDimensions.x != viewportWidth || viewportDimensions.y != viewportHeight)
+      camera.UpdateProjection(fovY, viewportWidth, viewportHeight, zNear, zFar);
 
   }
 
   void EditorLayer::OnRender(Device& device, Window& window)
   {
-    m_SceneRenderer->Render(device, m_Scene, *m_Camera, m_Camera->ViewportDimensions.x, m_Camera->ViewportDimensions.y, m_ClearColor);
+    if (m_SelectedSceneIndex < 0 || m_Scenes.size() < m_SelectedSceneIndex)
+      return;
+
+    Camera& camera = GetActiveCamera();
+    glm::uvec2 viewportDimensions = camera.GetViewportDimensions();
+
+    m_SceneRenderer->Render(device, m_Scenes[m_SelectedSceneIndex], camera, viewportDimensions.x, viewportDimensions.y, m_ClearColor);
   }
 
   void EditorLayer::OnGuiRender(Window& window, EventLibrary& eventLibrary)
@@ -182,22 +215,55 @@ namespace Pistachio
     m_PerformanceTracker.Render(window, m_ClearColor);
 
 
+    ImGui::Begin("Temp Debug Panel");
+
+
     std::map<std::string, Ref<Attachment>> sceneAttachments = m_SceneRenderer->GetDisplayReadyAttachments();
     std::vector<const char*> attachmentNames;
     for (const auto& [name, att] : sceneAttachments)
       attachmentNames.push_back(name.c_str());
 
-    ImGui::Begin("Temp Debug Panel");
     static int selectedPresentTextureIndex = 0;
     ImGui::ListBox("Display texture", &selectedPresentTextureIndex, attachmentNames.data(), attachmentNames.size(), 3);
-    ImGui::Text("Primary camera location: (%.2f, %.2f, %.2f)", m_Camera->Position.x, m_Camera->Position.y, m_Camera->Position.z);
+
+
+    std::vector<const char*> sceneNames;
+    for (const auto& scene : m_Scenes)
+      sceneNames.push_back(scene.GetSceneName().c_str());
+
+    ImGui::ListBox("Scenes", &m_SelectedSceneIndex, sceneNames.data(), sceneNames.size(), 3);
+
+
+    m_SelectedSceneCameraEntityMap.clear();
+    std::vector<const char*> cameraNames;
+    cameraNames.push_back("Editor Camera");
+    if (m_SelectedSceneIndex >= 0 && m_SelectedSceneIndex < m_Scenes.size())
+    {
+      int i = 1;
+      auto sceneCameraView = m_Scenes[m_SelectedSceneIndex].GetView<SemanticNameComponent, Camera>();
+      for (const EntityID& id : sceneCameraView)
+      {
+        SemanticNameComponent& name = sceneCameraView.get<SemanticNameComponent>(id);
+        m_SelectedSceneCameraEntityMap[i] = id;
+        cameraNames.push_back(std::move(name.c_str()));
+        i++;
+      }
+    }
+
+    ImGui::ListBox("Cameras", &m_SelectedSceneCameraIndex, cameraNames.data(), cameraNames.size(), 3);
+
+    Camera& camera = GetActiveCamera();
+    glm::vec3 cameraPosition = camera.GetPosition();
+
+    ImGui::Text("Primary camera location: (%.2f, %.2f, %.2f)", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+
     ImGui::End();
 
     if (attachmentNames.size() > 0)
     {
       std::string texName = std::string(attachmentNames[selectedPresentTextureIndex]);
       Ref<Attachment> activeDisplayAttachment = sceneAttachments[texName];
-      m_Viewport.Render(window, m_CameraOrbitController, activeDisplayAttachment);
+      m_Viewport.Render(window, GetActiveCameraController(), activeDisplayAttachment);
     }
 
 

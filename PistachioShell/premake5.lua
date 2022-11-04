@@ -20,7 +20,8 @@ project "Pistachio Shell"
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.entt}",
-		"%{IncludeDir.json}"
+		"%{IncludeDir.json}",
+		"%{IncludeDir.tinygltf}"
 	}
 
 	links

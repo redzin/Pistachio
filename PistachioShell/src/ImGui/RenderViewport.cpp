@@ -70,12 +70,12 @@ namespace Pistachio
     ImGui::PopStyleVar();
 
     ViewportMouseMoveEvent posEvent{ window.GetMouseX(), window.GetMouseY() };
-    if (cameraControllerOrbit.Enabled && ImGui::IsMouseDown(0))
+    if (cameraControllerOrbit.IsEnabled() && ImGui::IsMouseDown(0))
     {
       OnViewportMouseMoveEvent(posEvent, cameraControllerOrbit);
     }
 
-    if (cameraControllerOrbit.Enabled && !ImGui::IsMouseDown(0))
+    if (cameraControllerOrbit.IsEnabled() && !ImGui::IsMouseDown(0))
     {
       ViewportMouseClickEvent e
       {

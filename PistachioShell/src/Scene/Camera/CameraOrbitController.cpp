@@ -30,8 +30,11 @@ namespace Pistachio
     float temp = m_Enabled ? 1.0f : -std::log(m_RotationalSpeedRemainingAfterOneSecond);
     float dt_factor = (m_Enabled ? 1.0f : dt.count() * 1000);
 
-    double yaw = glm::degrees(glm::atan(camera.Direction.z, camera.Direction.x));
-    double pitch = glm::degrees(glm::asin(camera.Direction.y));
+    glm::vec3 currentDir = camera.GetDirection();
+    glm::vec3 currentPos = camera.GetPosition();
+
+    double yaw = glm::degrees(glm::atan(currentDir.z, currentDir.x));
+    double pitch = glm::degrees(glm::asin(currentDir.y));
 
     yaw += m_Dx * m_MouseSpeed * dt_factor / temp;
     pitch += m_Dy * m_MouseSpeed * dt_factor / temp;
@@ -76,7 +79,7 @@ namespace Pistachio
       sin(yawRad + glm::half_pi<double>())
     ));
 
-    glm::vec3 target = camera.Position + camera.Direction * m_Radius;
+    glm::vec3 target = currentPos + currentDir * m_Radius;
 
     float temp3 = m_RotationalSpeedRemainingAfterOneSecond == 1.0 ? 1.0f : std::log(m_RotationalSpeedRemainingAfterOneSecond);
     m_Radius += m_ZoomSpeed * dt.count() * m_Dz / temp3;

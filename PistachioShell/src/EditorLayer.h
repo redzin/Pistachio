@@ -1,9 +1,12 @@
 #pragma once
 #include "Pistachio/Rendering/RenderGraph.h"
-#include "SceneComponents/SceneComponents.h"
-#include "SceneComponents/SpriteComponent.h"
-#include "SceneComponents/Camera/Camera.h"
-#include "SceneComponents/Camera/CameraOrbitController.h"
+#include "Scene/Scene.h"
+#include "Scene/SceneComponents.h"
+#include "Scene/SpriteComponent.h"
+#include "Scene/SceneLoader.h"
+#include "Scene/Camera/Camera.h"
+#include "Scene/Camera/CameraOrbitController.h"
+#include "Scene/SceneComponents.h"
 #include "Rendering/SceneRenderer.h"
 #include "ImGui/MainDockspace.h"
 #include "ImGui/RenderViewport.h"
@@ -17,18 +20,24 @@ namespace Pistachio
   private:
 
     //Scene and rendering variables
-    Scene m_Scene;
+    SceneLoader m_SceneLoader;
     Scope<SceneRenderer> m_SceneRenderer;
     glm::vec4 m_ClearColor{ 0.65f, 0.88f, 0.92f, 1.00f };
 
-    // Camera variables
-    Ref<Camera> m_Camera;
-    CameraOrbitController m_CameraOrbitController;
+    Ref<Camera> m_EditorCamera;
+    CameraOrbitController m_EditorCameraOrbitController;
     inline static constexpr float fovY = 70;
     inline static constexpr float zNear = 0.1f;
     inline static constexpr float zFar = 1000.0f;
 
     // ImGui Panels
+    // Camera variables
+    int32_t m_SelectedSceneIndex = -1;
+    int32_t m_SelectedSceneCameraIndex = 0;
+    std::unordered_map<int32_t, EntityID> m_SelectedSceneCameraEntityMap;
+    Camera& GetActiveCamera();
+    CameraOrbitController& GetActiveCameraController();
+    std::vector<Scene> m_Scenes;
     Scope<MainDockspace> m_Dockspace;
     Viewport m_Viewport;
     PerformanceTracker m_PerformanceTracker;

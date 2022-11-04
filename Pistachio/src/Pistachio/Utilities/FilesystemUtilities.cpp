@@ -40,7 +40,7 @@ namespace Pistachio
 	std::string ReadFile(const std::string& filepath)
 	{
 		std::string result;
-		std::ifstream inFile(filepath, std::ios::in | std::ios::binary); // ifstream closes itself due to RAII
+		std::ifstream inFile(filepath, std::ios::in | std::ios::binary);
 		if (inFile)
 		{
 			inFile.seekg(0, std::ios::end);

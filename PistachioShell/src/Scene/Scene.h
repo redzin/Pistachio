@@ -10,8 +10,24 @@ namespace Pistachio
 
   class Scene
   {
+
+  private:
+    friend class SceneEntity;
+    entt::registry m_Registry;
+    std::string m_Name;
+
+  private:
+    template<typename ...T>
+    using GroupGet_t = entt::get_t<T...>;
+    template<typename ...T>
+    using GroupExclude_t = entt::exclude_t<T...>;
+
   public:
+    Scene() : m_Name("Untitled scene") {};
+    Scene(const std::string& name) : m_Name(name) {};
+
     SceneEntity CreateEntity();
+    SceneEntity CreateEntity(SceneEntity& parentEntity);
 
     template<typename... Components>
     auto GetView()
@@ -24,13 +40,9 @@ namespace Pistachio
     {
       return m_Registry.get<Components...>(id);
     }
-    
-  private:
-    template<typename ...T>
-    using GroupGet_t = entt::get_t<T...>;
-    template<typename ...T>
-    using GroupExclude_t = entt::exclude_t<T...>;
-  public:
+
+    const std::string& GetSceneName() const { return m_Name; }
+
     template<typename ...T>
     static constexpr GroupGet_t<T...> GroupGet = entt::get<T...>;
     template<typename ...T>
@@ -68,24 +80,29 @@ namespace Pistachio
 
     void Clear();
 
-  private:
-    friend class SceneEntity;
-    entt::registry m_Registry;
   };
 
+  struct SceneEntityRelationship
+  {
+    EntityID ParentID = entt::null;
+  };
 
   class SceneEntity
   {
   public:
-    SceneEntity(Scene& scene, EntityID&& id) : m_EntityID(std::move(id)), m_Scene(scene) {}
-    SceneEntity(Scene& scene, const EntityID&& id) : m_EntityID(id), m_Scene(scene) {}
+    SceneEntity(const SceneEntity& other) : m_Scene(other.m_Scene), m_EntityID(other.m_EntityID) { }
+    SceneEntity(Scene& scene) : m_Scene(scene), m_EntityID(entt::null) { } // null entity create by just passing scene
     ~SceneEntity() = default;
+    SceneEntity operator=(const SceneEntity& other)
+    {
+      return SceneEntity(other.m_Scene, other.m_EntityID);
+    }
 
     template<typename Component, typename... Args>
-    void AddComponent(Args&&... args)
+    decltype(auto) AddComponent(Args&&... args)
     {
       PSTC_CORE_ASSERT(!HasAnyOf<Component>(), "Component already exists on entity!");
-      m_Scene.m_Registry.emplace<Component>(m_EntityID, std::forward<Args>(args)...);
+      return m_Scene.m_Registry.emplace<Component>(m_EntityID, std::forward<Args>(args)...);
     }
 
     template<typename Component, typename... Args>
@@ -119,10 +136,39 @@ namespace Pistachio
       m_Scene.m_Registry.remove<Components...>(m_EntityID);
     }
 
+    bool HasParent()
+    {
+      if (!HasAllOf<SceneEntityRelationship>())
+        return false;
+
+      SceneEntityRelationship& parentRelationShip = GetComponent<SceneEntityRelationship>();
+      return parentRelationShip.ParentID != entt::null;
+    }
+
+    SceneEntity GetParent()
+    {
+      SceneEntityRelationship& parentRelationShip = GetComponent<SceneEntityRelationship>();
+      SceneEntity(m_Scene, parentRelationShip.ParentID);
+    }
+
     operator bool() const { return m_EntityID != entt::null; }
-    operator entt::entity() const { return static_cast<entt::entity>(m_EntityID); }
+    operator EntityID() const { return m_EntityID; }
+    //operator entt::entity() const { return static_cast<entt::entity>(m_EntityID); }
 
   private:
+    friend Scene;
+
+    SceneEntity(Scene& scene, EntityID id) : m_Scene(scene), m_EntityID(id) { }
+    SceneEntity(Scene& scene, EntityID id, EntityID parentId) : m_Scene(scene), m_EntityID(id)
+    {
+      if (parentId != entt::null)
+      {
+        SceneEntityRelationship relationship{ parentId };
+        AddComponent<SceneEntityRelationship>(relationship);
+      }
+
+    }
+
     EntityID m_EntityID;
     Scene& m_Scene;
   };
