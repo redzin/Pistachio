@@ -33,24 +33,6 @@ namespace Pistachio
     UpdateViewProjectionBuffer();
   }
 
-  Camera::Camera(Camera&& t) :
-  Position(m_Position),
-  Direction(m_Direction),
-  Up(m_Up),
-  Right(m_Right),
-  ViewportDimensions(m_ViewportDimensions),
-  GPUBuffer(m_GPUBuffer),
-  m_View(std::move(t.m_View)),
-  m_Projection(std::move(t.m_Projection)),
-  m_Position(std::move(t.m_Position)),
-  m_Direction(std::move(t.m_Direction)),
-  m_Up(std::move(t.m_Up)),
-  m_Right(std::move(t.m_Right)),
-  m_ViewportDimensions(std::move(t.m_ViewportDimensions)),
-  m_GPUBuffer(std::move(t.m_GPUBuffer))
-  {
-  }
-
   void Camera::UpdateViewBuffer()
   {
     memcpy(&((glm::mat4*)m_GPUBuffer->MemoryPtr)[0], &m_View[0], sizeof(glm::mat4));
@@ -91,7 +73,7 @@ namespace Pistachio
     m_Right = right;
     m_Direction = direction;
     m_Up = glm::cross(right, direction);
-    m_View = glm::lookAt(position, position + direction, Up);
+    m_View = glm::lookAt(position, position + direction, m_Up);
     UpdateViewBuffer();
     UpdateViewProjectionBuffer();
   }

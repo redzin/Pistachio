@@ -1,6 +1,6 @@
 #pragma once
 #include <Pistachio.h>
-#include "../SceneComponents/Camera/CameraOrbitController.h"
+#include "../Scene/Camera/CameraOrbitController.h"
 
 namespace Pistachio
 {

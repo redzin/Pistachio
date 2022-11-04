@@ -50,7 +50,6 @@
 #include "Pistachio/Core/Layers/Layer.h"
 #include "Pistachio/Core/Layers/LayerStack.h"
 #include "Pistachio/Rendering/RenderGraph.h"
-#include "Pistachio/Scene/Scene.h"
 
 
 #ifdef PSTC_PLATFORM_WINDOWS
