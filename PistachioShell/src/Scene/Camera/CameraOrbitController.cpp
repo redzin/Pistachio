@@ -146,8 +146,9 @@ namespace Pistachio
     m_Enabled = false;
   }
 
-  Camera CameraOrbitController::CreatePerspectiveCamera(Device& device, glm::vec3 target, glm::vec3 direction, float fovY, uint32_t m_Width, uint32_t m_Height, float zNear, float zFar)
+  Camera CameraOrbitController::CreatePerspectiveCamera(Device& device, glm::vec3 target, glm::vec3 direction, float radius, float fovY, uint32_t m_Width, uint32_t m_Height, float zNear, float zFar)
   {
+    m_Radius = radius;
     glm::vec3 position = target - glm::normalize(direction) * m_Radius;
     return Camera::CreatePerspectiveCamera(device, position, target, fovY, m_Width, m_Height, zNear, zFar);
   }

@@ -39,8 +39,12 @@ namespace Pistachio
     //void UploadBufferData(const RendererID& rendererId, const BufferDescriptor& buffer, uint32_t offset, const void* data) const override;
     //void UploadBufferData(const RendererID& rendererId, uint32_t size, uint32_t offset, const void* data) const override;
     void DeleteBuffer(RendererID& rendererId) const override;
-    void SetBufferUniformBinding(const RendererID& buffer, const uint32_t& binding) const override;
-    
+    void BindBuffer(BufferBindingTarget bindingTarget, const RendererID& buffer, const uint32_t& bindingSlot) const override;
+
+    DeviceMemoryFence FenceSync() const override;
+    void DeleteSync(DeviceMemoryFence gSync) const override;
+    FenceSignal ClientWaitSync(DeviceMemoryFence gSync, uint64_t timeout) const override;
+
     RendererID CreateAttributeLayout(const AttributeLayoutDescriptor& attributeDescriptor) const override;
     RendererID CreateAttributeLayout(RendererID indexBuffer, const AttributeLayoutDescriptor& attributeDescriptor) const override;
     void DeleteInputLayout(RendererID& id) const override;

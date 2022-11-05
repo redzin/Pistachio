@@ -17,7 +17,7 @@ namespace Pistachio
   struct StaticMesh
   {
 
-    StaticMesh(Device& device, uint32_t indexCount, uint32_t vertexCount, BufferDescriptor indexBufferDescriptor, BufferDescriptor positionBufferDescriptor, BufferDescriptor normalBufferDescriptor);
+    StaticMesh(Device& device, uint32_t indexCount, uint32_t vertexCount, BufferDescriptor indexBufferDescriptor, BufferDescriptor positionBufferDescriptor);
 
     Ref<Buffer> PositionBuffer;
     Ref<Buffer> NormalBuffer;
@@ -27,7 +27,8 @@ namespace Pistachio
 
     uint32_t GetIndexCount() const { return m_IndexCount; };
     uint32_t GetVertexCount() const { return m_VertexCount; };
-    void SetupTexCoordBuffer(Device& device, int index, BufferDescriptor texCoordBufferDescriptor);
+    void SetupNormalBuffer(Device& device, BufferDescriptor bufferDescriptor);
+    void SetupTexCoordBuffer(Device& device, int index, BufferDescriptor bufferDescriptor);
 
   private:
     uint32_t m_IndexCount;

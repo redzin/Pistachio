@@ -102,7 +102,7 @@ namespace Pistachio
         api.SetClearColor(clearColor);
         api.SetClearDepth(1.0f);
         api.Clear(COLOR_BUFFER | DEPTH_BUFFER);
-        api.SetBufferUniformBinding(camera.GetBuffer()->RendererID, 0);
+        api.BindBuffer(UNIFORM_BUFFER_TARGET, camera.GetBuffer()->RendererID, 0);
       }
     );
 
@@ -202,6 +202,24 @@ namespace Pistachio
     }
   }
 
+  Transform ComputeTransformRecursively(EntityID leafId, Scene& scene)
+  {
+    auto transformView = scene.GetView<Transform>() ;
+    Transform& transform = transformView.get<Transform>(leafId);
+
+    auto relationshipView = scene.GetView<SceneEntityRelationship>();
+
+    if (!relationshipView.contains(leafId))
+      return transform;
+
+    SceneEntityRelationship relationship = relationshipView.get<SceneEntityRelationship>(leafId);
+    if (relationship.ParentID == entt::null)
+      return transform;
+    
+    return ComputeTransformRecursively(relationship.ParentID, scene) * transform;
+    
+  }
+
   void RecordRenderCommands(PBRPassData& pbrPassData, Device& device, Scene& scene, Camera& camera, glm::vec4 clearColor)
   {
     pbrPassData.RenderPass->SetRenderState(pbrPassData.RenderPassState);
@@ -212,7 +230,7 @@ namespace Pistachio
         api.SetClearColor(clearColor);
         api.SetClearDepth(1.0f);
         api.Clear(COLOR_BUFFER | DEPTH_BUFFER);
-        api.SetBufferUniformBinding(camera.GetBuffer()->RendererID, 0);
+        api.BindBuffer(UNIFORM_BUFFER_TARGET, camera.GetBuffer()->RendererID, 0);
       }
     );
 
@@ -220,8 +238,9 @@ namespace Pistachio
     for (EntityID modelId : modelsView)
     {
       Model& model = modelsView.get<Model>(modelId);
-      Transform& transform = modelsView.get<Transform>(modelId);
+      Transform transform = ComputeTransformRecursively(modelId, scene);
 
+      pbrPassData.ModelUniformBuffer->Wait();
       memcpy(pbrPassData.ModelUniformBuffer->MemoryPtr, &transform, sizeof(glm::mat4));
 
       for (const StaticMesh& mesh : model.Meshes)
@@ -229,17 +248,22 @@ namespace Pistachio
         AttributeLayoutDescriptor attributeDesc;
         attributeDesc.push_back({ mesh.PositionBuffer, 0, 1, { {mesh.PositionBuffer->Descriptor.DataType, "a_Position"} } });
         attributeDesc.push_back({ mesh.NormalBuffer, 1, 2, { {mesh.NormalBuffer->Descriptor.DataType, "a_Normal"} } });
+        
+        if (mesh.TexCoordBuffer_0)
+          attributeDesc.push_back({ mesh.TexCoordBuffer_0, 2, 3, { {mesh.TexCoordBuffer_0->Descriptor.DataType, "a_Texcoord"} } });
+
         AttributeLayout& attributebuteLayout = device.RequestAttributeLayout(attributeDesc, mesh.IndexBuffer->RendererID);
 
         uint32_t count = mesh.GetIndexCount();
         RendererID vao = attributebuteLayout.RendererID;
         uint32_t indexBufferBaseType = ShaderDataTypeToOpenGLBaseType(mesh.IndexBuffer->Descriptor.DataType);
-        RendererID modelUniformBuffer = pbrPassData.ModelUniformBuffer->RendererID;
 
-        pbrPassData.RenderPass->RecordCommandBuffer([&camera, modelUniformBuffer, vao, count, indexBufferBaseType](Device& device, RenderingAPI& api)
+        pbrPassData.RenderPass->RecordCommandBuffer([&camera, vao, count, indexBufferBaseType, &pbrPassData](Device& device, RenderingAPI& api)
           {
-            api.SetBufferUniformBinding(modelUniformBuffer, 1);
+            api.BindBuffer(UNIFORM_BUFFER_TARGET, pbrPassData.ModelUniformBuffer->RendererID, 1);
             api.DrawIndexed(vao, count, PRIMITIVE_TRIANGLES, indexBufferBaseType);
+
+            pbrPassData.ModelUniformBuffer->Lock();
           }
         );
       }

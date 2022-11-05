@@ -12,6 +12,28 @@ namespace Pistachio
     m_Device.DeleteSampler(*this);
   }
 
+  void Buffer::Lock()
+  {
+    if (gSync)
+    {
+      m_Device.DeleteSync(gSync);
+    }
+    gSync = m_Device.FenceSync();
+  }
+
+  void Buffer::Wait()
+  {
+    if ((void*)gSync)
+    {
+      while (true)
+      {
+        FenceSignal waitReturn = m_Device.ClientWaitSync(gSync, 1);
+        if (waitReturn == FENCE_ALREADY_SIGNALED || waitReturn == FENCE_CONDITION_SATISFIED)
+          return;
+      }
+    }
+  }
+
   Buffer::~Buffer()
   {
     Pistachio::RendererID id_temp = RendererID;

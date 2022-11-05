@@ -430,9 +430,30 @@ namespace Pistachio
 		glDeleteBuffers(1, &rendererId);
 	}
 
-	void RenderingAPI_OpenGL::SetBufferUniformBinding(const RendererID& buffer, const uint32_t& binding) const
+	void RenderingAPI_OpenGL::BindBuffer(BufferBindingTarget bindingTarget, const RendererID& buffer, const uint32_t& bindingSlot) const
 	{
-		glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer);
+		glBindBufferBase(bindingTarget, bindingSlot, buffer);
+	}
+
+	//void RenderingAPI_OpenGL::SetBufferUniformBinding(const RendererID& buffer, const uint32_t& binding) const
+	//{
+	//	glBindBufferRange(GL_UNIFORM_BUFFER, binding, buffer, offset, size);
+	//}
+
+	DeviceMemoryFence RenderingAPI_OpenGL::FenceSync() const
+	{
+		GLsync gSync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+		return gSync;
+	}
+
+	void RenderingAPI_OpenGL::DeleteSync(DeviceMemoryFence gSync) const
+	{
+		glDeleteSync(static_cast<GLsync>(gSync));
+	}
+
+	FenceSignal RenderingAPI_OpenGL::ClientWaitSync(DeviceMemoryFence gSync, uint64_t timeout) const
+	{
+		return glClientWaitSync(static_cast<GLsync>(gSync), GL_SYNC_FLUSH_COMMANDS_BIT, timeout);
 	}
 
 

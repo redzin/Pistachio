@@ -53,7 +53,7 @@ namespace Pistachio
     void OnMouseScrollEvent(MouseScrollEvent e);
     void Enable(double x, double y);
     void Disable(double x, double y);
-    Camera CreatePerspectiveCamera(Device& device, glm::vec3 target, glm::vec3 direction, float fovY, uint32_t m_Width, uint32_t m_Height, float zNear, float zFar);
+    Camera CreatePerspectiveCamera(Device& device, glm::vec3 target, glm::vec3 direction, float radius, float fovY, uint32_t m_Width, uint32_t m_Height, float zNear, float zFar);
 
     bool IsEnabled() { return m_Enabled; }
 

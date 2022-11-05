@@ -38,17 +38,16 @@ namespace Pistachio
     virtual RendererID CreateShader(const std::string& path) const = 0;
     virtual void DeleteShader(RendererID& shader) const = 0;
     virtual void UseShaderProgram(const RendererID& shader) const = 0;
-
-    //virtual RendererID CreateBuffer(const BufferDescriptor& descriptor) const = 0;
-    //virtual RendererID CreateBuffer(const BufferDescriptor& descriptor, const void* data) const = 0;
     virtual RendererID CreatePersistenBuffer(const BufferDescriptor descriptor) const = 0;
     virtual RendererID CreatePersistenBuffer(const BufferDescriptor descriptor, const void* data) const = 0;
     virtual void* MapBuffer(RendererID rendererId, uint32_t offset, uint32_t size, uint32_t accessFlags) const = 0;
     virtual void UnmapBuffer(RendererID rendererId) const = 0;
-    //virtual void UploadBufferData(const RendererID& rendererId, const BufferDescriptor& buffer, uint32_t Offset, const void* data) const = 0;
-    //virtual void UploadBufferData(const RendererID& rendererId, uint32_t size, uint32_t offset, const void* data) const = 0;
     virtual void DeleteBuffer(RendererID& rendererId) const = 0;
-    virtual void SetBufferUniformBinding(const RendererID& buffer, const uint32_t& binding) const = 0;
+    virtual void BindBuffer(BufferBindingTarget bindingTarget, const RendererID& buffer, const uint32_t& bindingSlot) const = 0;
+
+    virtual DeviceMemoryFence FenceSync() const = 0;
+    virtual void DeleteSync(DeviceMemoryFence gSync) const = 0;
+    virtual FenceSignal ClientWaitSync(DeviceMemoryFence gSync, uint64_t timeout) const = 0;
 
     virtual RendererID CreateAttributeLayout(const AttributeLayoutDescriptor& attributeDescriptor) const = 0;
     virtual RendererID CreateAttributeLayout(RendererID indexBuffer, const AttributeLayoutDescriptor& attributeDescriptor) const = 0;

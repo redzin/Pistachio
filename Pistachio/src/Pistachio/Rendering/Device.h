@@ -48,6 +48,11 @@ namespace Pistachio
     TemporaryHashMap<Hash, Framebuffer, 8> m_Framebuffers;
     TemporaryHashMap<Hash, AttributeLayout, 8> m_AttributeLayouts;
 
+    DeviceMemoryFence FenceSync();
+    void DeleteSync(DeviceMemoryFence gSync);
+    FenceSignal ClientWaitSync(DeviceMemoryFence gSync, uint64_t timeoutNanoseconds);
+    
+
     // These should be called from the individual ptr handle object desctructors (e.g. ~Buffer should call DeleteBuffer -> delete buffer removes it from the pool)
     void DeleteShader(Shader& shader);
     void DeleteBuffer(Buffer& bufferPtr);

@@ -117,6 +117,21 @@ namespace Pistachio
     return m_Framebuffers[hash];
   }
 
+  DeviceMemoryFence Device::FenceSync()
+  {
+    return m_RenderingAPI->FenceSync();
+  }
+
+  void Device::DeleteSync(DeviceMemoryFence gSync)
+  {
+    m_RenderingAPI->DeleteSync(gSync);
+  }
+
+  FenceSignal Device::ClientWaitSync(DeviceMemoryFence gSync, uint64_t timeoutNanoseconds)
+  {
+    return m_RenderingAPI->ClientWaitSync(gSync, timeoutNanoseconds);
+  }
+
   AttributeLayout& Device::RequestAttributeLayout(const AttributeLayoutDescriptor& attributeDescriptor, RendererID indexBuffer)
   {
     Hasher hasher;

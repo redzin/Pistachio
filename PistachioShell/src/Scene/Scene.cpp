@@ -3,7 +3,6 @@
 
 namespace Pistachio
 {
-
   SceneEntity Scene::CreateEntity()
   {
     EntityID entity = static_cast<EntityID>(m_Registry.create());

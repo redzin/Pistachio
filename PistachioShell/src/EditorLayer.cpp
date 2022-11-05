@@ -8,16 +8,17 @@ namespace Pistachio
     if (m_SelectedSceneCameraIndex < 1)
       return *m_EditorCamera;
 
-    if (m_SelectedSceneIndex >= 0 && m_SelectedSceneIndex < m_Scenes.size())
-    {
-      int i = 0;
-      auto sceneCameraView = m_Scenes[m_SelectedSceneIndex].GetView<PrimarySceneCameraTag, Camera>();
-      for (const EntityID& id : sceneCameraView)
-      {
-        return sceneCameraView.get<Camera>(id);
-      }
-    }
+    if (m_SelectedSceneIndex < 0 || m_SelectedSceneIndex > m_Scenes.size())
+      return *m_EditorCamera;
 
+    EntityID selectedCameraID = m_SelectedSceneCameraEntityMap[m_SelectedSceneCameraIndex];
+    auto sceneCameraView = m_Scenes[m_SelectedSceneIndex].GetView<Camera>();
+    for (const EntityID& id : sceneCameraView)
+    {
+      if(id == selectedCameraID)
+        return sceneCameraView.get<Camera>(id);
+    }
+    
     return *m_EditorCamera;
   }
 
@@ -26,14 +27,15 @@ namespace Pistachio
     if (m_SelectedSceneCameraIndex < 1)
       return m_EditorCameraOrbitController;
 
-    if (m_SelectedSceneIndex >= 0 && m_SelectedSceneIndex < m_Scenes.size())
+    if (m_SelectedSceneIndex < 0 || m_SelectedSceneIndex > m_Scenes.size())
+      return m_EditorCameraOrbitController;
+
+    EntityID selectedCameraID = m_SelectedSceneCameraEntityMap[m_SelectedSceneCameraIndex];
+    auto sceneCameraView = m_Scenes[m_SelectedSceneIndex].GetView<CameraOrbitController>();
+    for (const EntityID& id : sceneCameraView)
     {
-      int i = 0;
-      auto sceneCameraView = m_Scenes[m_SelectedSceneIndex].GetView<PrimarySceneCameraTag, CameraOrbitController>();
-      for (const EntityID& id : sceneCameraView)
-      {
+      if (id == selectedCameraID)
         return sceneCameraView.get<CameraOrbitController>(id);
-      }
     }
 
     return m_EditorCameraOrbitController;
@@ -52,6 +54,7 @@ namespace Pistachio
               device,
               glm::vec3(0),
               glm::vec3(0.0f, 0.0f, -1.0f),
+              5.0f,
               fovY,
               m_Viewport.GetWidth(),
               m_Viewport.GetHeight(),
@@ -90,6 +93,7 @@ namespace Pistachio
         case ExampleScene::ExampleGLTFLoader:
           
           m_Scenes = m_SceneLoader.LoadGLTF(device);
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           
           break;
         case ExampleScene::OneMillionSprites:
@@ -107,6 +111,7 @@ namespace Pistachio
                 device,
                 glm::vec3(1.0f, 1.0f, 0.0f),
                 glm::vec3(0.0f, 0.0f, -1.0f),
+                5.0f,
                 fovY,
                 m_Viewport.GetWidth(),
                 m_Viewport.GetHeight(),

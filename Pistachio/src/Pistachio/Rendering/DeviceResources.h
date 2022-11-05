@@ -64,7 +64,7 @@ namespace Pistachio
 
 
   /////////////////////////////////////////////////////////
-  /// Vertex Buffers, Index Buffers, Vertex Layout
+  /// Buffers
   /////////////////////////////////////////////////////////
 
   typedef enum class BufferDataType
@@ -254,13 +254,31 @@ namespace Pistachio
     BufferDataType DataType = BufferDataType::Float;
   };
 
-  //struct GPUMemoryFence {};
+  typedef enum
+  {
+    UNIFORM_BUFFER_TARGET = 0x8A11, //GL_UNIFORM_BUFFER,
+    SHADER_STORAGE_BUFFER_TARGET = 0x90D2 // GL_SHADER_STORAGE_BUFFER
+  } BufferBindingTargetBit;
+  using BufferBindingTarget = uint32_t;
+
+  using DeviceMemoryFence = void*;
+  typedef enum
+  {
+    FENCE_ALREADY_SIGNALED = 0x911A,
+    FENCE_TIMEOUT_EXPIRED = 0x911B,
+    FENCE_CONDITION_SATISFIED = 0x911C,
+    FENCE_WAIT_FAILED = 0x911D
+  } FenceSignalBits;
+  using FenceSignal = uint32_t;
 
   struct Buffer
   {
     RendererID RendererID;
     BufferDescriptor Descriptor;
     void* MemoryPtr;
+
+    void Lock();
+    void Wait();
 
     Buffer(Device& device, Pistachio::RendererID rendererId, BufferDescriptor descriptor, void* memoryPtr)
       : m_Device(device), RendererID(rendererId), Descriptor(descriptor), MemoryPtr(memoryPtr)
@@ -273,10 +291,12 @@ namespace Pistachio
   private:
     Buffer() = delete;
     Device& m_Device;
+    
+    DeviceMemoryFence gSync = nullptr;
   };
 
   /////////////////////////////////////////////////////////
-  /// Input Layout / Vertex Array Object (VAO)
+  /// Attribute Layout / Vertex Array Object (VAO)
   /////////////////////////////////////////////////////////
 
   struct AttributeLayoutDescriptorEntry
