@@ -34,12 +34,14 @@ namespace Pistachio
 
   };
 
-
-  typedef enum 
+  typedef enum
   {
-    // Default values from OpenGL
-    IMAGE_FORMAT_RGB = 0x1907,
-    IMAGE_FORMAT_RGBA = 0x1908
+    IMAGE_FORMAT_RGB = 0x1907, // GL_RGB
+    IMAGE_FORMAT_RGBA = 0x1908, // GL_RGBA
+    IMAGE_FORMAT_RED = 0x1903, // GL_RED
+    IMAGE_FORMAT_RG = 0x8227, // GL_RED
+    IMAGE_FORMAT_BGR = 0x80E0, // GL_BGR
+    IMAGE_FORMAT_BGRA = 0x80E1, // GL_BGRA
   } ImageFormatBits;
   using ImageFormat = uint32_t;
 

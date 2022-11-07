@@ -82,6 +82,7 @@ namespace Pistachio
     void UpdateViewBuffer();
     void UpdateProjectionBuffer();
     void UpdateViewProjectionBuffer();
+    void UpdatePositionBuffer();
 
   private:
 

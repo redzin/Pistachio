@@ -38,6 +38,7 @@ void main()
 {
   
   out_color = texture(u_TextureSampler, in_TexCoord);
+  //out_color = vec4(in_TexCoord.xy, 0.0f, 1.0f);
 
   if (out_color.w == 0.0f)
     discard;

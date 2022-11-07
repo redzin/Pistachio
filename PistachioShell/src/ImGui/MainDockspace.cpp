@@ -108,9 +108,39 @@ namespace Pistachio
             eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::OneMillionSprites });
           }
 
-          if (ImGui::MenuItem("GLTF Example Loader"))
+          if (ImGui::MenuItem("MetalRoughSphere"))
           {
-            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::ExampleGLTFLoader });
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::MetalRoughSpheres});
+          }
+
+          if (ImGui::MenuItem("Duck"))
+          {
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::Duck });
+          }
+
+          if (ImGui::MenuItem("Cube"))
+          {
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::Cube });
+          }
+
+          if (ImGui::MenuItem("Box"))
+          {
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::Box });
+          }
+
+          if (ImGui::MenuItem("FlightHelmet"))
+          {
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::FlightHelmet });
+          }
+
+          if (ImGui::MenuItem("Buggy"))
+          {
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::Buggy });
+          }
+
+          if (ImGui::MenuItem("Sponza"))
+          {
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::Buggy });
           }
 
           ImGui::EndMenu();

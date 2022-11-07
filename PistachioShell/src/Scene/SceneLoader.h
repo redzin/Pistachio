@@ -19,8 +19,10 @@ namespace Pistachio
   class SceneLoader
   {
   public:
-    //std::vector<Scene> LoadGLTF(Device& device, const std::string& path = "vendor/gltf-Sample-Models/2.0/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf");
-    std::vector<Scene> LoadGLTF(Device& device, const std::string& path = "vendor/gltf-Sample-Models/2.0/Duck/glTF/Duck.gltf");
+    //std::vector<Scene> LoadGLTF(Device& device, const std::string& path = "vendor/gltf-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
+    //std::vector<Scene> LoadGLTF(Device& device, const std::string& path = "vendor/gltf-Sample-Models/2.0/MetalRoughSpheresNoTextures/glTF/MetalRoughSpheresNoTextures.gltf");
+    std::vector<Scene> LoadGLTF(Device& device, const std::string& path = "vendor/gltf-Sample-Models/2.0/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf");
+    //std::vector<Scene> LoadGLTF(Device& device, const std::string& path = "vendor/gltf-Sample-Models/2.0/Duck/glTF/Duck.gltf");
     //std::vector<Scene> LoadGLTF(Device& device, const std::string& path = "vendor/gltf-Sample-Models/2.0/Cube/glTF/Cube.gltf");
     //std::vector<Scene> LoadGLTF(Device& device, const std::string& path = "vendor/gltf-Sample-Models/2.0/Box/glTF/Box.gltf");
 

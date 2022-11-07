@@ -90,12 +90,49 @@ namespace Pistachio
         {
         case ExampleScene::None:
           break;
-        case ExampleScene::ExampleGLTFLoader:
-          
-          m_Scenes = m_SceneLoader.LoadGLTF(device);
+
+        case ExampleScene::Duck:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Duck/glTF/Duck.gltf");
           m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
-          
           break;
+
+        case ExampleScene::MetalRoughSpheres:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf");
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          break;
+
+        case ExampleScene::FlightHelmet:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          break;
+
+        case ExampleScene::Cube:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Cube/glTF/Cube.gltf");
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          break;
+
+        case ExampleScene::Box:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Box/glTF/Box.gltf");
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          break;
+
+        case ExampleScene::Buggy:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Buggy/glTF/Buggy.gltf");
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          break;
+
+        case ExampleScene::Sponza:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          break;
+
         case ExampleScene::OneMillionSprites:
 
           m_Scenes.push_back(Scene("One Million Sprites"));
@@ -168,7 +205,7 @@ namespace Pistachio
       }
     );
 
-    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::ExampleGLTFLoader });
+    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::MetalRoughSpheres });
 
     PSTC_INFO("{0} attached!", GetName());
   }

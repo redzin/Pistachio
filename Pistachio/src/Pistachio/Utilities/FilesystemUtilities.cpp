@@ -11,7 +11,7 @@ namespace Pistachio
 		Image image;
 
 		int width, height, channels;
-		stbi_set_flip_vertically_on_load(1);
+		stbi_set_flip_vertically_on_load(true);
 		stbi_uc* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
 		PSTC_CORE_ASSERT(data, "Failed to load image!");
 
@@ -32,6 +32,8 @@ namespace Pistachio
 		{
 			PSTC_CORE_ASSERT(false, "Unrecognised image format!");
 		}
+
+		stbi_set_flip_vertically_on_load(false);
 
 		return image;
 

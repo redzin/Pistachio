@@ -73,8 +73,10 @@ namespace Pistachio
     Bool,
     Byte,
     UnsignedByte,
+    UnsignedByte2,
     Short,
     UnsignedShort,
+    UnsignedShort2,
     Int,
     Int2,
     Int3,
@@ -94,22 +96,24 @@ namespace Pistachio
     
     switch (Type)
     {
-    case BufferDataType::Bool:          return 0x8B56; // GL_BOOL
-    case BufferDataType::Byte:          return 0x1400; // GL_BYTE
-    case BufferDataType::UnsignedByte:  return 0x1401; // GL_UNSIGNED_BYTE
-    case BufferDataType::Short:         return 0x1402; // GL_SHORT
-    case BufferDataType::UnsignedShort: return 0x1403; // GL_UNSIGNED_SHORT
-    case BufferDataType::Int:           return 0x1404; // GL_INT
-    case BufferDataType::Int2:          return 0x1404; // GL_INT
-    case BufferDataType::Int3:          return 0x1404; // GL_INT
-    case BufferDataType::Int4:          return 0x1404; // GL_INT
-    case BufferDataType::UnsignedInt:   return 0x1405; // GL_UNSIGNED_INT
-    case BufferDataType::Float:         return 0x1406; // GL_FLOAT
-    case BufferDataType::Float2:        return 0x1406; // GL_FLOAT
-    case BufferDataType::Float3:        return 0x1406; // GL_FLOAT
-    case BufferDataType::Float4:        return 0x1406; // GL_FLOAT
-    case BufferDataType::Mat3:          return 0x1406; // GL_FLOAT
-    case BufferDataType::Mat4:          return 0x1406; // GL_FLOAT
+    case BufferDataType::Bool:            return 0x8B56; // GL_BOOL
+    case BufferDataType::Byte:            return 0x1400; // GL_BYTE
+    case BufferDataType::UnsignedByte:    return 0x1401; // GL_UNSIGNED_BYTE
+    case BufferDataType::UnsignedByte2:   return 0x1401; // GL_UNSIGNED_BYTE
+    case BufferDataType::Short:           return 0x1402; // GL_SHORT
+    case BufferDataType::UnsignedShort:   return 0x1403; // GL_UNSIGNED_SHORT
+    case BufferDataType::UnsignedShort2:  return 0x1403; // GL_UNSIGNED_SHORT
+    case BufferDataType::Int:             return 0x1404; // GL_INT
+    case BufferDataType::Int2:            return 0x1404; // GL_INT
+    case BufferDataType::Int3:            return 0x1404; // GL_INT
+    case BufferDataType::Int4:            return 0x1404; // GL_INT
+    case BufferDataType::UnsignedInt:     return 0x1405; // GL_UNSIGNED_INT
+    case BufferDataType::Float:           return 0x1406; // GL_FLOAT
+    case BufferDataType::Float2:          return 0x1406; // GL_FLOAT
+    case BufferDataType::Float3:          return 0x1406; // GL_FLOAT
+    case BufferDataType::Float4:          return 0x1406; // GL_FLOAT
+    case BufferDataType::Mat3:            return 0x1406; // GL_FLOAT
+    case BufferDataType::Mat4:            return 0x1406; // GL_FLOAT
     }
     
     PSTC_ASSERT(false, "Unknown buffer data type!");
@@ -120,17 +124,23 @@ namespace Pistachio
     {
       switch (Type)
       {
-      case BufferDataType::Bool:          return 1;
-      case BufferDataType::Int:           return 4;
-      case BufferDataType::Int2:          return 4 * 2;
-      case BufferDataType::Int3:          return 4 * 3;
-      case BufferDataType::Int4:          return 4 * 4;
-      case BufferDataType::Float:         return 4;
-      case BufferDataType::Float2:        return 4 * 2;
-      case BufferDataType::Float3:        return 4 * 3;
-      case BufferDataType::Float4:        return 4 * 4;
-      case BufferDataType::Mat4:          return 4 * 4 * 4;
-      case BufferDataType::UnsignedInt:   return 4;
+      case BufferDataType::Bool:            return 1;
+      case BufferDataType::Byte:            return 1;
+      case BufferDataType::UnsignedByte:    return 1;
+      case BufferDataType::UnsignedByte2:   return 2;
+      case BufferDataType::Short:           return 2;
+      case BufferDataType::UnsignedShort:   return 2;
+      case BufferDataType::UnsignedShort2:  return 2 * 2;
+      case BufferDataType::Int:             return 4;
+      case BufferDataType::Int2:            return 4 * 2;
+      case BufferDataType::Int3:            return 4 * 3;
+      case BufferDataType::Int4:            return 4 * 4;
+      case BufferDataType::UnsignedInt:     return 4;
+      case BufferDataType::Float:           return 4;
+      case BufferDataType::Float2:          return 4 * 2;
+      case BufferDataType::Float3:          return 4 * 3;
+      case BufferDataType::Float4:          return 4 * 4;
+      case BufferDataType::Mat4:            return 4 * 4 * 4;
       }
 
       PSTC_CORE_ASSERT(false, "Undefined shader data type!");
@@ -142,17 +152,23 @@ namespace Pistachio
   {
     switch (Type)
     {
-    case BufferDataType::Bool:          return 1;
-    case BufferDataType::Int:           return 1;
-    case BufferDataType::Int2:          return 2;
-    case BufferDataType::Int3:          return 3;
-    case BufferDataType::Int4:          return 4;
-    case BufferDataType::Float:         return 1;
-    case BufferDataType::Float2:        return 2;
-    case BufferDataType::Float3:        return 3;
-    case BufferDataType::Float4:        return 4;
-    case BufferDataType::Mat4:          return 16;
-    case BufferDataType::UnsignedInt:   return 1;
+    case BufferDataType::Bool:            return 1;
+    case BufferDataType::Byte:            return 1;
+    case BufferDataType::UnsignedByte:    return 1;
+    case BufferDataType::UnsignedByte2:   return 2;
+    case BufferDataType::Short:           return 1;
+    case BufferDataType::UnsignedShort:   return 1;
+    case BufferDataType::UnsignedShort2:  return 2;
+    case BufferDataType::Int:             return 1;
+    case BufferDataType::Int2:            return 2;
+    case BufferDataType::Int3:            return 3;
+    case BufferDataType::Int4:            return 4;
+    case BufferDataType::Float:           return 1;
+    case BufferDataType::Float2:          return 2;
+    case BufferDataType::Float3:          return 3;
+    case BufferDataType::Float4:          return 4;
+    case BufferDataType::Mat4:            return 16;
+    case BufferDataType::UnsignedInt:     return 1;
     }
 
     PSTC_CORE_ASSERT(false, "Undefined shader data type!");
@@ -333,7 +349,26 @@ namespace Pistachio
 
   typedef enum 
   {
-    // Default values from OpenGL
+    INTERNAL_FORMAT_R8 = 0x8229,
+    INTERNAL_FORMAT_R16 = 0x822A,
+    INTERNAL_FORMAT_RG8 = 0x822B,
+    INTERNAL_FORMAT_RG16 = 0x822C,
+    INTERNAL_FORMAT_R16F = 0x822D,
+    INTERNAL_FORMAT_R32F = 0x822E,
+    INTERNAL_FORMAT_RG16F = 0x822F,
+    INTERNAL_FORMAT_RG32F = 0x8230,
+    INTERNAL_FORMAT_R8I = 0x8231,
+    INTERNAL_FORMAT_R8UI = 0x8232,
+    INTERNAL_FORMAT_R16I = 0x8233,
+    INTERNAL_FORMAT_R16UI = 0x8234,
+    INTERNAL_FORMAT_R32I = 0x8235,
+    INTERNAL_FORMAT_R32UI = 0x8236,
+    INTERNAL_FORMAT_RG8I = 0x8237,
+    INTERNAL_FORMAT_RG8UI = 0x8238,
+    INTERNAL_FORMAT_RG16I = 0x8239,
+    INTERNAL_FORMAT_RG16UI = 0x823A,
+    INTERNAL_FORMAT_RG32I = 0x823B,
+    INTERNAL_FORMAT_RG32UI = 0x823C,
     INTERNAL_FORMAT_R3_G3_B2 = 0x2A10,
     INTERNAL_FORMAT_RGB4 = 0x804F,
     INTERNAL_FORMAT_RGB5 = 0x8050,

@@ -43,7 +43,7 @@ namespace Pistachio
       case TINYGLTF_COMPONENT_TYPE_BYTE:
         PSTC_ERROR("Unsupported type encountered in gltf: Byte2");
       case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-        PSTC_ERROR("Unsupported type encountered in gltf: UnsignedByte2");
+        return BufferDataType::UnsignedByte2;
       case TINYGLTF_COMPONENT_TYPE_DOUBLE:
         PSTC_ERROR("Unsupported type encountered in gltf: Double2");
       case TINYGLTF_COMPONENT_TYPE_FLOAT:
@@ -55,7 +55,7 @@ namespace Pistachio
       case TINYGLTF_COMPONENT_TYPE_SHORT:
         PSTC_ERROR("Unsupported type encountered in gltf: Short2");
       case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-        PSTC_ERROR("Unsupported type encountered in gltf: UnsignedShort2");
+        return BufferDataType::UnsignedShort2;
       }
 
     case TINYGLTF_TYPE_VEC3:
@@ -153,11 +153,8 @@ namespace Pistachio
 
   }
 
-  void ProcessNode(Device& device, Scene& scene, const tinygltf::Model& gltfObject, const tinygltf::Node& gltfNode, SceneEntity parentEntity)
+  Transform GetTransform(const tinygltf::Node& gltfNode)
   {
-    SceneEntity sceneEntity = scene.CreateEntity(parentEntity);
-    Model& model = sceneEntity.AddComponent<Model>();
-
     bool hasTransform = gltfNode.matrix.size() > 0 || gltfNode.rotation.size() > 0 || gltfNode.translation.size() > 0 || gltfNode.scale.size() > 0;
 
     glm::mat4 transform(1.0f);
@@ -172,23 +169,97 @@ namespace Pistachio
       }
       else
       {
-        glm::scale(transform, glm::vec3(gltfNode.scale[0], gltfNode.scale[1], gltfNode.scale[2]));
-
-        glm::quat rotQuaternion(gltfNode.rotation[0], gltfNode.rotation[1], gltfNode.rotation[2], gltfNode.rotation[3]);
-        transform = glm::toMat4(rotQuaternion) * transform;
+        if (gltfNode.scale.size() > 0)
+          glm::scale(transform, glm::vec3(gltfNode.scale[0], gltfNode.scale[1], gltfNode.scale[2]));
+        
+        if (gltfNode.rotation.size() > 0)
+        {
+          glm::quat rotQuaternion(gltfNode.rotation[0], gltfNode.rotation[1], gltfNode.rotation[2], gltfNode.rotation[3]);
+          transform = glm::toMat4(rotQuaternion) * transform;
+        }
 
         glm::translate(transform, glm::vec3(gltfNode.translation[0], gltfNode.translation[1], gltfNode.translation[2]));
 
       }
     }
-    sceneEntity.AddComponent<Transform>(transform);
+    return transform;
+  }
 
+  PBRMetallicRoughnessMaterial GetMaterial(Device& device, const tinygltf::Model& gltfObject, const tinygltf::Primitive& gltfPrimitive)
+  {
+    PBRMetallicRoughnessMaterial material{ glm::vec4(1.0f, 0.766f, 0.336f, 1.0f), 1.0, 0.0 }; // default to gold
+    if (gltfPrimitive.material >= 0)
+    {
+      const auto& gltfMaterial = gltfObject.materials[gltfPrimitive.material];
+
+      for (int i = 0; i < 4; i++)
+        material.ColorFactor[i] = gltfMaterial.pbrMetallicRoughness.baseColorFactor[i];
+
+      material.MetallicFactor = gltfMaterial.pbrMetallicRoughness.metallicFactor;
+      material.RoughnessFactor = gltfMaterial.pbrMetallicRoughness.roughnessFactor;
+
+      if (gltfMaterial.pbrMetallicRoughness.baseColorTexture.index >= 0)
+      {
+        //gltfMaterial.pbrMetallicRoughness.baseColorTexture.texCoord; // figure out how to handle this
+        const auto& gltfColorTexture = gltfObject.textures[gltfMaterial.pbrMetallicRoughness.baseColorTexture.index];
+        const auto& gltfColorSampler = gltfObject.samplers[gltfColorTexture.sampler];
+        const auto& gltfColorImage = gltfObject.images[gltfColorTexture.source];
+        SamplerDescriptor colorSamplerDescriptor;
+        colorSamplerDescriptor.MagFilter = gltfColorSampler.magFilter;
+        colorSamplerDescriptor.MinFilter = gltfColorSampler.minFilter;
+        colorSamplerDescriptor.TextureDescriptor.InternalFormat = INTERNAL_FORMAT_RGB8;
+        colorSamplerDescriptor.TextureDescriptor.SizeX = gltfColorImage.width;
+        colorSamplerDescriptor.TextureDescriptor.SizeY = gltfColorImage.height;
+        colorSamplerDescriptor.MipLevels = 4;
+        Image colorImage;
+        colorImage.Data = (void*)&gltfColorImage.image[0];
+        colorImage.Width = gltfColorImage.width;
+        colorImage.Height = gltfColorImage.height;
+        colorImage.DataType = gltfColorImage.pixel_type;
+        colorImage.Format = gltfColorImage.component == 4 ? IMAGE_FORMAT_RGBA : IMAGE_FORMAT_RGB;
+        material.SetUpColorTexture(device, colorSamplerDescriptor, colorImage);
+      }
+
+      if (gltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0)
+      {
+        //gltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture.texCoord; // figure out how to handle this
+        const auto& gltfMetallicRoughnessTexture = gltfObject.textures[gltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture.index];
+        const auto& gltfMetallicRoughnessSampler = gltfObject.samplers[gltfMetallicRoughnessTexture.sampler];
+        const auto& gltfMetallicRoughnessImage = gltfObject.images[gltfMetallicRoughnessTexture.source];
+        SamplerDescriptor metallicRoughnessSamplerDescriptor;
+        metallicRoughnessSamplerDescriptor.MagFilter = gltfMetallicRoughnessSampler.magFilter;
+        metallicRoughnessSamplerDescriptor.MinFilter = gltfMetallicRoughnessSampler.minFilter;
+        metallicRoughnessSamplerDescriptor.TextureDescriptor.InternalFormat = INTERNAL_FORMAT_RGB8;
+        metallicRoughnessSamplerDescriptor.TextureDescriptor.SizeX = gltfMetallicRoughnessImage.width;
+        metallicRoughnessSamplerDescriptor.TextureDescriptor.SizeY = gltfMetallicRoughnessImage.height;
+        metallicRoughnessSamplerDescriptor.MipLevels = 4;
+        Image metallicRoughnessImage;
+        metallicRoughnessImage.Data = (void*)&gltfMetallicRoughnessImage.image[0];
+        metallicRoughnessImage.Width = gltfMetallicRoughnessImage.width;
+        metallicRoughnessImage.Height = gltfMetallicRoughnessImage.height;
+        metallicRoughnessImage.DataType = gltfMetallicRoughnessImage.pixel_type;
+        metallicRoughnessImage.Format = gltfMetallicRoughnessImage.component == 4 ? IMAGE_FORMAT_RGBA : IMAGE_FORMAT_RGB;
+        material.SetUpMetallicRoughnessMap(device, metallicRoughnessSamplerDescriptor, metallicRoughnessImage);
+      }
+
+    }
+    return material;
+  }
+
+  void ProcessNode(Device& device, Scene& scene, const tinygltf::Model& gltfObject, const tinygltf::Node& gltfNode, SceneEntity parentEntity)
+  {
+    SceneEntity sceneEntity = scene.CreateEntity(parentEntity);
+    Model& model = sceneEntity.AddComponent<Model>();
+
+    sceneEntity.AddComponent<Transform>(GetTransform(gltfNode));
+    
     if (gltfNode.mesh >= 0)
     {
       const auto& gltfMesh = gltfObject.meshes[gltfNode.mesh];
 
       for (const auto& gltfPrimitive : gltfMesh.primitives)
       {
+
         int positionAccessorIndex = -1;
         if (gltfPrimitive.attributes.count("POSITION") > 0)
           positionAccessorIndex = gltfPrimitive.attributes.at("POSITION");
@@ -211,11 +282,16 @@ namespace Pistachio
         positionBufferDescriptor.Size = ComputeBufferSize(gltfPositionAccessor);
         positionBufferDescriptor.DataType = BufferDataType::Float3;
 
-        model.Meshes.push_back(StaticMesh(device, gltfIndexAccessor.count, gltfPositionAccessor.count, indexBufferDescriptor, positionBufferDescriptor));
-        StaticMesh& mesh = model.Meshes[model.Meshes.size() - 1];
+        model.Meshes.push_back(
+          {
+            StaticMesh(device, gltfIndexAccessor.count, gltfPositionAccessor.count, indexBufferDescriptor, positionBufferDescriptor),
+            GetMaterial(device, gltfObject, gltfPrimitive)
+          }
+        );
+        MaterialMesh& materialMesh = model.Meshes[model.Meshes.size() - 1];
 
-        ProcessBuffer((char*)mesh.IndexBuffer->MemoryPtr, gltfIndexAccessor, gltfIndexBufferView, gltfIndexBuffer);
-        ProcessBuffer((char*)mesh.PositionBuffer->MemoryPtr, gltfPositionAccessor, gltfPositionBufferView, gltfPositionBuffer);
+        ProcessBuffer((char*)materialMesh.Mesh.IndexBuffer->MemoryPtr, gltfIndexAccessor, gltfIndexBufferView, gltfIndexBuffer);
+        ProcessBuffer((char*)materialMesh.Mesh.PositionBuffer->MemoryPtr, gltfPositionAccessor, gltfPositionBufferView, gltfPositionBuffer);
 
         if (gltfPrimitive.attributes.count("NORMAL") > 0)
         {
@@ -228,8 +304,8 @@ namespace Pistachio
           BufferDescriptor normalBufferDescriptor;
           normalBufferDescriptor.Size = ComputeBufferSize(gltfNormalAccessor);
           normalBufferDescriptor.DataType = BufferDataType::Float3;
-          mesh.SetupNormalBuffer(device, normalBufferDescriptor);
-          ProcessBuffer((char*)mesh.NormalBuffer->MemoryPtr, gltfNormalAccessor, gltfNormalBufferView, gltfNormalBuffer);
+          materialMesh.Mesh.SetupNormalBuffer(device, normalBufferDescriptor);
+          ProcessBuffer((char*)materialMesh.Mesh.NormalBuffer->MemoryPtr, gltfNormalAccessor, gltfNormalBufferView, gltfNormalBuffer);
 
         }
         else
@@ -247,9 +323,12 @@ namespace Pistachio
 
           BufferDescriptor texcoordBufferDescriptor;
           texcoordBufferDescriptor.Size = ComputeBufferSize(gltfTexcoordAccessor);
-          texcoordBufferDescriptor.DataType = BufferDataType::Float2;
-          mesh.SetupTexCoordBuffer(device, 0, texcoordBufferDescriptor);
-          ProcessBuffer((char*)mesh.TexCoordBuffer_0->MemoryPtr, gltfTexcoordAccessor, gltfTexcoordBufferView, gltfTexcoordBuffer);
+          texcoordBufferDescriptor.DataType =
+            gltfTexcoordAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE ? BufferDataType::UnsignedByte2 :
+            gltfTexcoordAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT ? BufferDataType::UnsignedShort2 :
+            BufferDataType::Float2;
+          materialMesh.Mesh.SetupTexCoordBuffer(device, 0, texcoordBufferDescriptor);
+          ProcessBuffer((char*)materialMesh.Mesh.TexCoordBuffer_0->MemoryPtr, gltfTexcoordAccessor, gltfTexcoordBufferView, gltfTexcoordBuffer);
         }
         else
         {
@@ -267,8 +346,8 @@ namespace Pistachio
           BufferDescriptor texcoordBufferDescriptor;
           texcoordBufferDescriptor.Size = ComputeBufferSize(gltfTexcoordAccessor);
           texcoordBufferDescriptor.DataType = BufferDataType::Float2;
-          mesh.SetupTexCoordBuffer(device, 1, texcoordBufferDescriptor);
-          ProcessBuffer((char*)mesh.TexCoordBuffer_1->MemoryPtr, gltfTexcoordAccessor, gltfTexcoordBufferView, gltfTexcoordBuffer);
+          materialMesh.Mesh.SetupTexCoordBuffer(device, 1, texcoordBufferDescriptor);
+          ProcessBuffer((char*)materialMesh.Mesh.TexCoordBuffer_1->MemoryPtr, gltfTexcoordAccessor, gltfTexcoordBufferView, gltfTexcoordBuffer);
         }
         else
         {

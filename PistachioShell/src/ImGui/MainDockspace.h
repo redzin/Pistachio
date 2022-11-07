@@ -7,8 +7,14 @@ namespace Pistachio
   enum class ExampleScene
   {
     None = 0,
-    OneMillionSprites = 1,
-    ExampleGLTFLoader = 2
+    OneMillionSprites,
+    Duck,
+    MetalRoughSpheres,
+    FlightHelmet,
+    Cube,
+    Box,
+    Buggy,
+    Sponza
   };
 
   struct ExampleSceneLoadEvent
