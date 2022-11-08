@@ -7,12 +7,25 @@ namespace Pistachio
   {
     if (e.action == Input::ButtonAction::KeyPressed && e.mouseKey == Input::MouseCode::ButtonLeft)
     {
-      cameraOrbitController.Enable(e.x, e.y);
+      cameraOrbitController.EnableOrbiting(e.x, e.y);
       window.HideCursor();
     }
+
     if (e.action == Input::ButtonAction::KeyReleased && e.mouseKey == Input::MouseCode::ButtonLeft)
     {
-      cameraOrbitController.Disable(e.x, e.y);
+      cameraOrbitController.DisableOrbiting(e.x, e.y);
+      window.ShowCursor();
+    }
+
+    if (e.action == Input::ButtonAction::KeyPressed && e.mouseKey == Input::MouseCode::ButtonRight)
+    {
+      cameraOrbitController.EnablePanning(e.x, e.y);
+      window.HideCursor();
+    }
+
+    if (e.action == Input::ButtonAction::KeyReleased && e.mouseKey == Input::MouseCode::ButtonRight)
+    {
+      cameraOrbitController.DisablePanning(e.x, e.y);
       window.ShowCursor();
     }
 
@@ -59,6 +72,19 @@ namespace Pistachio
       OnViewportMouseClickEvent(e, window, cameraControllerOrbit);
     }
 
+    if (ImGui::IsWindowHovered() && ImGui::IsItemHovered() && ImGui::IsMouseClicked(1))
+    {
+      ViewportMouseClickEvent e
+      {
+        Input::ButtonAction::KeyPressed,
+        Input::MouseCode::ButtonRight,
+        0,
+        window.GetMouseX(),
+        window.GetMouseY()
+      };
+      OnViewportMouseClickEvent(e, window, cameraControllerOrbit);
+    }
+
     ViewportMouseScrollEvent e = { window.GetScrollX(), window.GetScrollY() };
     if (ImGui::IsWindowHovered() && ImGui::IsItemHovered() && std::abs(e.yoffset) > 0.1)
     {
@@ -70,17 +96,30 @@ namespace Pistachio
     ImGui::PopStyleVar();
 
     ViewportMouseMoveEvent posEvent{ window.GetMouseX(), window.GetMouseY() };
-    if (cameraControllerOrbit.IsEnabled() && ImGui::IsMouseDown(0))
+    if ((cameraControllerOrbit.IsOrbitingEnabled() && ImGui::IsMouseDown(0)) || (cameraControllerOrbit.IsPanningEnabled() && ImGui::IsMouseDown(1)))
     {
       OnViewportMouseMoveEvent(posEvent, cameraControllerOrbit);
     }
 
-    if (cameraControllerOrbit.IsEnabled() && !ImGui::IsMouseDown(0))
+    if (cameraControllerOrbit.IsOrbitingEnabled() && !ImGui::IsMouseDown(0))
     {
       ViewportMouseClickEvent e
       {
         Input::ButtonAction::KeyReleased,
         Input::MouseCode::ButtonLeft,
+        0,
+        posEvent.x,
+        posEvent.y
+      };
+      OnViewportMouseClickEvent(e, window, cameraControllerOrbit);
+    }
+
+    if (cameraControllerOrbit.IsPanningEnabled() && !ImGui::IsMouseDown(1))
+    {
+      ViewportMouseClickEvent e
+      {
+        Input::ButtonAction::KeyReleased,
+        Input::MouseCode::ButtonRight,
         0,
         posEvent.x,
         posEvent.y

@@ -65,7 +65,7 @@ out vec4 out_color;
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
+} 
  
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
@@ -120,10 +120,10 @@ void main()
   //lightPositions[3] = cameraPosition +  0.0f * up + -5.0f * right; // to be input from CPU
   //lightPositions[2] = cameraPosition +  0.0f * up +  5.0f * right; // to be input from CPU
   
-  lightPositions[0] = vec3( 5.0f,   0.0f, 10.0f); // to be input from CPU
-  lightPositions[1] = vec3(-5.0f,   0.0f, 10.0f); // to be input from CPU
-  lightPositions[3] = vec3(  0.0f,  5.0f, 10.0f); // to be input from CPU
-  lightPositions[2] = vec3(  0.0f, -5.0f, 10.0f); // to be input from CPU
+  lightPositions[0] = vec3(0.0f,  10.0f,  10.0f); // to be input from CPU
+  lightPositions[1] = vec3(0.0f, -10.0f,  10.0f); // to be input from CPU
+  lightPositions[3] = vec3(0.0f,  10.0f, -20.0f); // to be input from CPU
+  lightPositions[2] = vec3(0.0f, -10.0f, -20.0f); // to be input from CPU
 
   lightColors[0] = vec3(1.0f, 1.0f, 1.0f) * 200.0f; // to be input from CPU
   lightColors[1] = vec3(1.0f, 1.0f, 1.0f) * 200.0f; // to be input from CPU
@@ -132,6 +132,7 @@ void main()
 
 
   //Albedo from color texture
+  //vec3 color = vec3(1.0f, 0.0f, 0.0f);
   vec3 color = colorFactor.xyz * texture(u_ColorSampler, in_Texcoord).xyz;
   color.r = pow(color.r, 2.2f);
   color.g = pow(color.g, 2.2f);
@@ -144,7 +145,7 @@ void main()
   vec3 V = normalize(cameraPosition - in_WorldPosition);
   
   // Surface reflection at zero incidence
-  vec3 F0 = vec3(0.04f);
+  vec3 F0 = vec3(0.04);
   F0 = mix(F0, color, metallic);
 
   // Result of the reflectance equation (i.e. total light result)
