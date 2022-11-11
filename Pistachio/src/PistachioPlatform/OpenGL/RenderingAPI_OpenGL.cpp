@@ -253,7 +253,7 @@ namespace Pistachio
 		return shaderTypes;
 	}
 
-	static uint32_t CompileShader(const std::string& shaderSrc, std::vector<GLenum>& shaderTypes)
+	static uint32_t CompileShader(const std::string& shaderSrc, std::vector<GLenum>& shaderTypes, const std::string& prependSource = "")
 	{
 
 		PSTC_CORE_ASSERT(shaderTypes.size() <= 2, "Cannot compile more than 3 shaders per shader program!");
@@ -265,7 +265,7 @@ namespace Pistachio
 		{
 			//std::string shaderDefString = "#version 430 core\n#extension GL_ARB_buffer_storage : require\n#define " + ShaderDefStringFromType(shaderType) + "\n";
 			std::string shaderDefString = "#version 430 core\n#define " + ShaderDefStringFromType(shaderType) + "\n";
-			std::string completeSrc = shaderDefString + shaderSrc;
+			std::string completeSrc = shaderDefString + prependSource + shaderSrc;
 
 			GLuint shader = glCreateShader(shaderType);
 			const GLchar* source = (const GLchar*)(completeSrc).c_str();
@@ -327,11 +327,11 @@ namespace Pistachio
 		return program;
 	}
 
-	RendererID RenderingAPI_OpenGL::CreateShader(const std::string& filePath) const
+	RendererID RenderingAPI_OpenGL::CreateShader(ShaderDescriptor shaderDescriptor) const
 	{
-		auto shaderSrc = ReadFile(filePath);
+		auto shaderSrc = ReadFile(shaderDescriptor.Path);
 		auto shaderTypes = GetShaderTypes(shaderSrc);
-		auto rendererId = CompileShader(shaderSrc, shaderTypes);
+		auto rendererId = CompileShader(shaderSrc, shaderTypes, shaderDescriptor.PrependSource);
 
 		PSTC_CORE_ASSERT(rendererId, "Failed to compile shader!");
 

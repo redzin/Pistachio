@@ -37,6 +37,7 @@ namespace Pistachio
     spritePassData.RenderPassState.DepthFunction = DepthFunction::LEqual;
     spritePassData.RenderPassState.DepthMask = true;
     spritePassData.RenderPassState.BlendState = BlendState{ BlendFunction::SrcAlpha, BlendFunction::OneMinusSrcAlpha };
+    spritePassData.RenderPass->SetRenderState(spritePassData.RenderPassState);
 
     float vertexPositions[3 * 4] = {
     -0.5f, -0.5f, 0.0f,
@@ -81,6 +82,9 @@ namespace Pistachio
       device.UploadSamplerData(spritePassData.Sampler, img, index);
     }
 
+    ShaderDescriptor descriptor = { "assets/shaders/SpriteInstanced.glsl" };
+    spritePassData.RenderPass->SetShaderProgram(descriptor);
+
     return spritePassData;
   }
 
@@ -113,9 +117,6 @@ namespace Pistachio
 
   void BeginFrame(SpritePassData& spritePassData, const glm::vec4& clearColor, Camera& camera)
   {
-    spritePassData.RenderPass->SetRenderState(spritePassData.RenderPassState);
-    spritePassData.RenderPass->SetShaderProgram("assets/shaders/SpriteInstanced.glsl");
-
     spritePassData.RenderPass->RecordCommandBuffer([&clearColor, &camera](Device& device, RenderingAPI& api)
       {
         api.SetClearColor(clearColor);

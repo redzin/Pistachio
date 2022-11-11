@@ -57,9 +57,16 @@ namespace Pistachio
   /// Shaders
   /////////////////////////////////////////////////////////
 
+  struct ShaderDescriptor
+  {
+    std::string Path;
+    std::string PrependSource; // prepended after the version declaration, but before anything else
+  };
+
   struct Shader
   {
     RendererID RendererID;
+    ShaderDescriptor Descriptor;
   };
 
 

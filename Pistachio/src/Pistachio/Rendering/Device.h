@@ -33,7 +33,7 @@ namespace Pistachio
     
     void SetViewport(int32_t xoffset, int32_t yoffset, uint32_t width, uint32_t height);
     AttributeLayout& RequestAttributeLayout(const AttributeLayoutDescriptor& attributeDescriptor, RendererID indexBuffer = 0);
-    Ref<Shader> RequestShader(const std::string& path);
+    Ref<Shader> RequestShader(ShaderDescriptor shaderDescriptor);
     Ref<Shader> RequestShader(const std::string& fragmentSrc, const std::string& vertexSrc);
 
     void BeginNewFrame();
@@ -44,7 +44,7 @@ namespace Pistachio
 
     // Shared objects owned by the device are requestable
     Framebuffer& RequestFramebuffer(std::vector<Ref<Attachment>> attachments);
-    std::unordered_map<std::string, Ref<Shader>> m_Shaders;
+    std::unordered_map<Hash, Ref<Shader>> m_Shaders;
     TemporaryHashMap<Hash, Framebuffer, 8> m_Framebuffers;
     TemporaryHashMap<Hash, AttributeLayout, 8> m_AttributeLayouts;
 

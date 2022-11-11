@@ -1,13 +1,12 @@
 #pragma once
 #include "pch.h"
+#include "glm/gtx/quaternion.hpp"
 #include "Scene.h"
 #include "SceneComponents.h"
 #include "Camera/Camera.h"
 #include "Camera/CameraOrbitController.h"
 
-#include "nlohmann/json.hpp"
-
-using json = nlohmann::json;
+//using json = nlohmann::json;
 
 namespace Pistachio
 {

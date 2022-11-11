@@ -1,7 +1,6 @@
 #pragma once
 #include "pch.h"
 #include "SceneLoader.h"
-#include "glm/gtx/quaternion.hpp"
 
 // Define these only in *one* .cc file.
 #define TINYGLTF_IMPLEMENTATION
@@ -187,16 +186,18 @@ namespace Pistachio
 
   PBRMetallicRoughnessMaterial GetMaterial(Device& device, const tinygltf::Model& gltfObject, const tinygltf::Primitive& gltfPrimitive)
   {
-    PBRMetallicRoughnessMaterial material{ glm::vec4(1.0f, 0.766f, 0.336f, 1.0f), 1.0, 0.0 }; // default to gold
+    PBRMetallicRoughnessMaterial material;
+    material.SetUpUniforms(device, { glm::vec4(1.0f, 0.766f, 0.336f, 1.0f), glm::vec2(1.0, 0.0) });// default to gold
     if (gltfPrimitive.material >= 0)
     {
       const auto& gltfMaterial = gltfObject.materials[gltfPrimitive.material];
 
       for (int i = 0; i < 4; i++)
-        material.ColorFactor[i] = gltfMaterial.pbrMetallicRoughness.baseColorFactor[i];
+        material.UniformData.ColorFactor[i] = gltfMaterial.pbrMetallicRoughness.baseColorFactor[i];
 
-      material.MetallicFactor = gltfMaterial.pbrMetallicRoughness.metallicFactor;
-      material.RoughnessFactor = gltfMaterial.pbrMetallicRoughness.roughnessFactor;
+      material.UniformData.MetallicRoughnessFactor.x = gltfMaterial.pbrMetallicRoughness.metallicFactor;
+      material.UniformData.MetallicRoughnessFactor.y = gltfMaterial.pbrMetallicRoughness.roughnessFactor;
+      material.UpdateUniforms();
 
       if (gltfMaterial.pbrMetallicRoughness.baseColorTexture.index >= 0)
       {
@@ -249,7 +250,6 @@ namespace Pistachio
   void ProcessNode(Device& device, Scene& scene, const tinygltf::Model& gltfObject, const tinygltf::Node& gltfNode, SceneEntity parentEntity)
   {
     SceneEntity sceneEntity = scene.CreateEntity(parentEntity);
-    Model& model = sceneEntity.AddComponent<Model>();
 
     sceneEntity.AddComponent<Transform>(GetTransform(gltfNode));
     
@@ -282,16 +282,11 @@ namespace Pistachio
         positionBufferDescriptor.Size = ComputeBufferSize(gltfPositionAccessor);
         positionBufferDescriptor.DataType = BufferDataType::Float3;
 
-        model.Meshes.push_back(
-          {
-            StaticMesh(device, gltfIndexAccessor.count, gltfPositionAccessor.count, indexBufferDescriptor, positionBufferDescriptor),
-            GetMaterial(device, gltfObject, gltfPrimitive)
-          }
-        );
-        MaterialMesh& materialMesh = model.Meshes[model.Meshes.size() - 1];
+        PBRMetallicRoughnessMaterial& material = sceneEntity.AddComponent<PBRMetallicRoughnessMaterial>(GetMaterial(device, gltfObject, gltfPrimitive));
+        StaticMesh& mesh = sceneEntity.AddComponent<StaticMesh>(device, gltfIndexAccessor.count, gltfPositionAccessor.count, indexBufferDescriptor, positionBufferDescriptor);
 
-        ProcessBuffer((char*)materialMesh.Mesh.IndexBuffer->MemoryPtr, gltfIndexAccessor, gltfIndexBufferView, gltfIndexBuffer);
-        ProcessBuffer((char*)materialMesh.Mesh.PositionBuffer->MemoryPtr, gltfPositionAccessor, gltfPositionBufferView, gltfPositionBuffer);
+        ProcessBuffer((char*)mesh.IndexBuffer->MemoryPtr, gltfIndexAccessor, gltfIndexBufferView, gltfIndexBuffer);
+        ProcessBuffer((char*)mesh.PositionBuffer->MemoryPtr, gltfPositionAccessor, gltfPositionBufferView, gltfPositionBuffer);
 
         if (gltfPrimitive.attributes.count("NORMAL") > 0)
         {
@@ -304,8 +299,8 @@ namespace Pistachio
           BufferDescriptor normalBufferDescriptor;
           normalBufferDescriptor.Size = ComputeBufferSize(gltfNormalAccessor);
           normalBufferDescriptor.DataType = BufferDataType::Float3;
-          materialMesh.Mesh.SetupNormalBuffer(device, normalBufferDescriptor);
-          ProcessBuffer((char*)materialMesh.Mesh.NormalBuffer->MemoryPtr, gltfNormalAccessor, gltfNormalBufferView, gltfNormalBuffer);
+          mesh.SetupNormalBuffer(device, normalBufferDescriptor);
+          ProcessBuffer((char*)mesh.NormalBuffer->MemoryPtr, gltfNormalAccessor, gltfNormalBufferView, gltfNormalBuffer);
 
         }
         else
@@ -327,8 +322,8 @@ namespace Pistachio
             gltfTexcoordAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE ? BufferDataType::UnsignedByte2 :
             gltfTexcoordAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT ? BufferDataType::UnsignedShort2 :
             BufferDataType::Float2;
-          materialMesh.Mesh.SetupTexCoordBuffer(device, 0, texcoordBufferDescriptor);
-          ProcessBuffer((char*)materialMesh.Mesh.TexCoordBuffer_0->MemoryPtr, gltfTexcoordAccessor, gltfTexcoordBufferView, gltfTexcoordBuffer);
+          mesh.SetupTexCoordBuffer(device, 0, texcoordBufferDescriptor);
+          ProcessBuffer((char*)mesh.TexCoordBuffer_0->MemoryPtr, gltfTexcoordAccessor, gltfTexcoordBufferView, gltfTexcoordBuffer);
         }
         else
         {
@@ -346,8 +341,8 @@ namespace Pistachio
           BufferDescriptor texcoordBufferDescriptor;
           texcoordBufferDescriptor.Size = ComputeBufferSize(gltfTexcoordAccessor);
           texcoordBufferDescriptor.DataType = BufferDataType::Float2;
-          materialMesh.Mesh.SetupTexCoordBuffer(device, 1, texcoordBufferDescriptor);
-          ProcessBuffer((char*)materialMesh.Mesh.TexCoordBuffer_1->MemoryPtr, gltfTexcoordAccessor, gltfTexcoordBufferView, gltfTexcoordBuffer);
+          mesh.SetupTexCoordBuffer(device, 1, texcoordBufferDescriptor);
+          ProcessBuffer((char*)mesh.TexCoordBuffer_1->MemoryPtr, gltfTexcoordAccessor, gltfTexcoordBufferView, gltfTexcoordBuffer);
         }
         else
         {

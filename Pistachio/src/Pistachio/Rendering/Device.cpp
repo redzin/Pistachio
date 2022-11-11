@@ -63,33 +63,53 @@ namespace Pistachio
     m_RenderingAPI->UploadSamplerData(*sampler, image, layer);
   }
 
-  Ref<Shader> Device::RequestShader(const std::string& path)
-  {
-    if (m_Shaders.find(path) != m_Shaders.end())
-      return m_Shaders[path];
-
-    auto rendererId = m_RenderingAPI->CreateShader(path);
-    m_Shaders[path] = CreateRef<Shader>(rendererId);
-    return m_Shaders[path];
-  }
-
   void Device::BeginNewFrame()
   {
     m_Framebuffers.Advance(); // advance to delete framebuffers that have been used for at least 8 frames
     m_AttributeLayouts.Advance(); // advance to delete attribute layouts that have not been used for at least 8 frames
   }
 
+  Ref<Shader> Device::RequestShader(ShaderDescriptor shaderDescriptor)
+  {
+    Hasher hasher;
+
+    for (const char& c : shaderDescriptor.Path)
+      hasher.hash(c);
+
+    for (const char& c : shaderDescriptor.PrependSource)
+      hasher.hash(c);
+
+    Hash hash = hasher.get();
+
+    if (m_Shaders.find(hash) != m_Shaders.end())
+      return m_Shaders[hash];
+
+    auto rendererId = m_RenderingAPI->CreateShader(shaderDescriptor);
+    m_Shaders[hash] = CreateRef<Shader>(rendererId, shaderDescriptor);
+    return m_Shaders[hash];
+  }
+
   Ref<Shader> Device::RequestShader(const std::string& vertexSrc, const std::string& fragmentSrc)
   {
-    std::string hash = "";
-    hash += static_cast<uint64_t>(std::hash<std::string>{}(fragmentSrc));
-    hash += static_cast<uint64_t>(std::hash<std::string>{}(vertexSrc));
+    std::string fakePath = "";
+    fakePath += static_cast<uint64_t>(std::hash<std::string>{}(fragmentSrc));
+    fakePath += static_cast<uint64_t>(std::hash<std::string>{}(vertexSrc));
+
+    Hasher hasher;
+
+    for (const char& c : vertexSrc)
+      hasher.hash(c);
+
+    for (const char& c : fragmentSrc)
+      hasher.hash(c);
+
+    Hash hash = hasher.get();
 
     if (m_Shaders.find(hash) != m_Shaders.end())
       return m_Shaders[hash];
 
     auto rendererId = m_RenderingAPI->CreateShader(vertexSrc, fragmentSrc);
-    m_Shaders[hash] = CreateRef<Shader>(rendererId);
+    m_Shaders[hash] = CreateRef<Shader>(rendererId, ShaderDescriptor(fakePath, ""));
     return m_Shaders[hash];
   }
 

@@ -174,5 +174,3 @@ namespace Pistachio
   };
 
 }
-
-#include "SceneLoader.h"

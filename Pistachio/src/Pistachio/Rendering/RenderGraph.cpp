@@ -43,7 +43,7 @@ namespace Pistachio
       device.m_RenderingAPI->SetBlendFunction(pass->m_RenderState.BlendState.SourceBlendFunction, pass->m_RenderState.BlendState.DestinationBlendFunction);
 
       device.m_RenderingAPI->SetViewport(0, 0, viewport_width, viewport_height);
-      device.m_RenderingAPI->UseShaderProgram(device.RequestShader(pass->m_Shader->Name)->RendererID);
+      device.m_RenderingAPI->UseShaderProgram(device.RequestShader(pass->m_Shader)->RendererID);
       device.m_RenderingAPI->BindFramebuffer(framebuffer);
 
       for (const auto& cap : disabledCapabilities)
@@ -91,10 +91,9 @@ namespace Pistachio
     m_RenderState = state;
   }
 
-  void RenderPass::SetShaderProgram(const std::string& shaderName)
+  void RenderPass::SetShaderProgram(ShaderDescriptor& shaderDescriptor)
   {
-    m_Shader = CreateRef<ShaderResource>();
-    m_Shader->Name = shaderName;
+    m_Shader = shaderDescriptor;
   }
 
   void RenderPass::AddAttachmentOutput(Ref<Attachment> attachment)

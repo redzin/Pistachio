@@ -25,8 +25,8 @@ namespace Pistachio
     void SetClearDepth(const float depth) const override;
     void SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height) const override;
 
+    RendererID CreateShader(ShaderDescriptor shaderDescriptor) const override;
     RendererID CreateShader(const std::string& vertexSrc, const std::string& fragmentSrc) const override;
-    RendererID CreateShader(const std::string& path) const override;
     void UseShaderProgram(const RendererID& shader) const override;
     void DeleteShader(RendererID& shader) const override;
 

@@ -101,7 +101,7 @@ namespace Pistachio
     ~RenderPass() = default;
 
     void SetRenderState(RenderPassState& state);
-    void SetShaderProgram(const std::string& shaderName);
+    void SetShaderProgram(ShaderDescriptor& shaderDescriptor);
     void AddAttachmentOutput(Ref<Attachment> attachment);
     void ClearAttachmentOutputs();
     void RecordCommandBuffer(std::function<void(Device&, RenderingAPI&)> commands);
@@ -110,7 +110,7 @@ namespace Pistachio
     std::string SemanticName;
 
     RenderPassState m_RenderState;
-    Ref<ShaderResource> m_Shader = nullptr;
+    ShaderDescriptor m_Shader;
     std::vector<Ref<Attachment>> m_AttachmentOuputs;
     std::vector<std::function<void(Device&, RenderingAPI&)>> m_CommandBuffer; // todo: write a real command buffer
   };

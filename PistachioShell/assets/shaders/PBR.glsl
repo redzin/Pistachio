@@ -18,16 +18,26 @@ layout(std140, binding = 1) uniform ModelUniforms
 
 layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec3 a_Normal;
-layout(location = 2) in vec2 a_Texcoord;
+
+#ifdef _ENABLE_TEXCOORD_0
+layout(location = 2) in vec2 a_Texcoord_0;
+#endif
 
 layout(location = 0) out vec3 out_WorldPosition;
 layout(location = 1) out vec3 out_Normal;
-layout(location = 2) out vec2 out_Texcoord;
+
+#ifdef _ENABLE_TEXCOORD_0
+layout(location = 2) out vec2 out_Texcoord_0;
+#endif
 
 void main()
 {
     out_Normal = mat3(normalMatrix) * a_Normal;
-    out_Texcoord = a_Texcoord;
+    
+#ifdef _ENABLE_TEXCOORD_0
+    out_Texcoord_0 = a_Texcoord_0;
+#endif
+
     out_WorldPosition = (modelTransform * vec4(a_Position, 1.0)).xyz;
     gl_Position = projectionView * vec4(out_WorldPosition, 1.0);
 }
@@ -41,7 +51,10 @@ const float PI = 3.14159265359;
 
 layout(location = 0) in vec3 in_WorldPosition;
 layout(location = 1) in vec3 in_Normal;
-layout(location = 2) in vec2 in_Texcoord;
+
+#ifdef _ENABLE_TEXCOORD_0
+layout(location = 2) in vec2 in_Texcoord_0;
+#endif
 
 layout(std140, binding = 0) uniform CameraData
 {
@@ -130,17 +143,24 @@ void main()
   lightColors[2] = vec3(1.0f, 1.0f, 1.0f) * 200.0f; // to be input from CPU
   lightColors[3] = vec3(1.0f, 1.0f, 1.0f) * 200.0f; // to be input from CPU
 
-
+  
+#ifdef _ENABLE_TEXCOORD_0
   //Albedo from color texture
-  //vec3 color = vec3(1.0f, 0.0f, 0.0f);
-  vec3 color = colorFactor.xyz * texture(u_ColorSampler, in_Texcoord).xyz;
+  vec3 color = colorFactor.xyz * texture(u_ColorSampler, in_Texcoord_0).xyz; // todo: move colorfactor after sRGB decoding / color correcting
   color.r = pow(color.r, 2.2f);
   color.g = pow(color.g, 2.2f);
   color.b = pow(color.b, 2.2f);
+  float metallic = metallicRoughnessFactor[0] * texture(u_MetallicRoughnessSampler, in_Texcoord_0).b;
+  float roughness = max(metallicRoughnessFactor[1] * texture(u_MetallicRoughnessSampler, in_Texcoord_0).g, 0.05f);
 
-  float metallic = metallicRoughnessFactor[0] * texture(u_MetallicRoughnessSampler, in_Texcoord).b;
-  float roughness = max(metallicRoughnessFactor[1] * texture(u_MetallicRoughnessSampler, in_Texcoord).g, 0.05f);
+#else
   
+  vec3 color = colorFactor.xyz;
+  float metallic = metallicRoughnessFactor[0];
+  float roughness = max(metallicRoughnessFactor[1], 0.05f);
+
+#endif
+
   vec3 N = normalize(in_Normal);
   vec3 V = normalize(cameraPosition - in_WorldPosition);
   
@@ -179,7 +199,7 @@ void main()
     vec3 kD = vec3(1.0) - kS; // fraction of refraction
     kD *= 1.0 - metallic;
     
-    float NdotL = max(dot(N, L), 0.0);        
+    float NdotL = max(dot(N, L), 0.0);
     Lo += (kD * color / PI + specular) * radiance * NdotL;
     
   }
@@ -194,8 +214,8 @@ void main()
   out_color = vec4(color, colorFactor.w);
   
   //out_color = vec4(N, 1.0f);
-  //out_color = vec4(texture(u_MetallicRoughnessSampler, in_Texcoord).rgb, 1.0f);
-  //out_color = vec4(in_Texcoord.st, 0.0f, 1.0f);
+  //out_color = vec4(texture(u_MetallicRoughnessSampler, in_Texcoord_0).rgb, 1.0f);
+  //out_color = vec4(in_Texcoord_0.st, 0.0f, 1.0f);
   
   if (out_color.w == 0.0f)
     discard;

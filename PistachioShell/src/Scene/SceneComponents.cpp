@@ -31,13 +31,43 @@ namespace Pistachio
   }
 
   PBRMetallicRoughnessMaterial::PBRMetallicRoughnessMaterial()
-    : ColorFactor(glm::vec4(1.0f)), MetallicFactor(0.0f), RoughnessFactor(0.5f)
+    : UniformData({ glm::vec4(1.0f), glm::vec2(0.0f, 0.5f) })
   {
   }
 
-  PBRMetallicRoughnessMaterial::PBRMetallicRoughnessMaterial(glm::vec4 colorFactor, float metallicFactor, float roughnessFactor)
-    : ColorFactor(colorFactor), MetallicFactor(metallicFactor), RoughnessFactor(roughnessFactor)
+  void PBRMetallicRoughnessMaterial::SetUpUniforms(Device& device)
   {
+
+    BufferDescriptor materialUniformBufferDescriptor;
+    materialUniformBufferDescriptor.Size = sizeof(PBRMaterialUniformData);
+
+    DeviceUniformBuffer = device.CreateBuffer(materialUniformBufferDescriptor);
+
+  }
+
+  void PBRMetallicRoughnessMaterial::SetUpUniforms(Device& device, PBRMaterialUniformData data)
+  {
+
+    BufferDescriptor materialUniformBufferDescriptor;
+    materialUniformBufferDescriptor.Size = sizeof(PBRMaterialUniformData);
+
+    UniformData = data;
+
+    DeviceUniformBuffer = device.CreateBuffer(materialUniformBufferDescriptor, &UniformData);
+
+  }
+
+  void PBRMetallicRoughnessMaterial::UpdateUniforms()
+  {
+    DeviceUniformBuffer->Wait(); // wait for the GPU to be finished rendering last frame (not ideal, should be double or triple buffered to reduce wait)
+    memcpy(DeviceUniformBuffer->MemoryPtr, &UniformData, sizeof(PBRMaterialUniformData));
+  }
+
+  void PBRMetallicRoughnessMaterial::UpdateUniforms(PBRMaterialUniformData data)
+  {
+    UniformData = data;
+    DeviceUniformBuffer->Wait(); // wait for the GPU to be finished rendering last frame (not ideal, should be double or triple buffered to reduce wait)
+    memcpy(DeviceUniformBuffer->MemoryPtr, &UniformData, sizeof(PBRMaterialUniformData));
   }
 
   void PBRMetallicRoughnessMaterial::SetUpColorTexture(Device& device, SamplerDescriptor& colorSamplerDescriptor, const Image& image)
@@ -58,6 +88,33 @@ namespace Pistachio
     device.UploadSamplerData(NormalMap, image);
   }
 
+  ShaderDescriptor GenerateShaderDescriptor(PBRMetallicRoughnessMaterial material)
+  {
+
+    ShaderDescriptor shaderDescriptor;
+    shaderDescriptor.Path = "assets/shaders/PBR.glsl";
+    shaderDescriptor.PrependSource += "#define _ENABLE_TEXCOORD_0";
+
+    return shaderDescriptor;
+
+  }
+
+  Hash GetHash(PBRMetallicRoughnessMaterial material)
+  {
+    Hasher hasher;
+
+    hasher.hash(material.UniformData.ColorFactor.x);
+    hasher.hash(material.UniformData.ColorFactor.y);
+    hasher.hash(material.UniformData.ColorFactor.z);
+    hasher.hash(material.UniformData.ColorFactor.w);
+    hasher.hash(material.UniformData.MetallicRoughnessFactor.x);
+    hasher.hash(material.UniformData.MetallicRoughnessFactor.y);
+    hasher.hash(material.MetallicRoughnessMap == nullptr);
+    hasher.hash(material.NormalMap == nullptr);
+
+    return hasher.get();
+  }
+
   PBRPassData CreatePBRPass(Device& device, RenderGraph& renderGraph)
   {
     PBRPassData pbrPassData;
@@ -71,17 +128,8 @@ namespace Pistachio
     pbrPassData.RenderPassState.BlendState = BlendState{ BlendFunction::SrcAlpha, BlendFunction::OneMinusSrcAlpha };
 
     BufferDescriptor modelUniformBufferDescriptor;
-    modelUniformBufferDescriptor.Size = sizeof(PBRModelUniformData);
-    pbrPassData.ModelUniformBuffer.DeviceBuffer = device.CreateBuffer(modelUniformBufferDescriptor);
-
-    BufferDescriptor materialUniformBufferDescriptor;
-    materialUniformBufferDescriptor.Size = sizeof(PBRMaterialUniformData);
-
-    PBRMaterialUniformData defaultMaterial;
-    defaultMaterial.colorFactor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    defaultMaterial.metallicRoughnessFactor = glm::vec2(0.0f, 0.5f);
-
-    pbrPassData.MaterialUniformBuffer.DeviceBuffer = device.CreateBuffer(materialUniformBufferDescriptor, &defaultMaterial);
+    modelUniformBufferDescriptor.Size = 2 * sizeof(glm::mat4);
+    pbrPassData.DevicePerMeshUniformBuffer = device.CreateBuffer(modelUniformBufferDescriptor);
 
     return pbrPassData;
   }
@@ -115,28 +163,17 @@ namespace Pistachio
 
   void UpdateModelUniformBuffer(PBRPassData& pbrPassData, const Transform& transform)
   {
-    pbrPassData.ModelUniformBuffer.Data.ModelTransform = transform;
-    pbrPassData.ModelUniformBuffer.Data.NormalMatrix = glm::transpose(glm::inverse(transform));
+    pbrPassData.DevicePerMeshUniformBuffer->Wait(); // wait for the GPU to be finished rendering last frame (not ideal, should be double or triple buffered to reduce wait)
+
+    glm::mat4* gpuPtr = (glm::mat4*)pbrPassData.DevicePerMeshUniformBuffer->MemoryPtr;
     
-    pbrPassData.ModelUniformBuffer.DeviceBuffer->Wait(); // wait for the GPU to be finished rendering last frame (not ideal, should be double or triple buffered to reduce wait)
-    memcpy(pbrPassData.ModelUniformBuffer.DeviceBuffer->MemoryPtr, &pbrPassData.ModelUniformBuffer.Data, sizeof(PBRModelUniformData));
-  }
-
-  void UpdateMaterialUniformBuffer(PBRPassData& pbrPassData, PBRMetallicRoughnessMaterial material)
-  {
-    pbrPassData.MaterialUniformBuffer.Data.colorFactor = material.ColorFactor;
-    pbrPassData.MaterialUniformBuffer.Data.metallicRoughnessFactor[0] = material.MetallicFactor;
-    pbrPassData.MaterialUniformBuffer.Data.metallicRoughnessFactor[1] = material.RoughnessFactor;
-
-    pbrPassData.MaterialUniformBuffer.DeviceBuffer->Wait(); // wait for the GPU to be finished rendering last frame (not ideal, should be double or triple buffered to reduce wait)
-    memcpy(pbrPassData.MaterialUniformBuffer.DeviceBuffer->MemoryPtr, &pbrPassData.MaterialUniformBuffer.Data, sizeof(PBRMaterialUniformData));
+    gpuPtr[0] = transform;
+    gpuPtr[1] = glm::transpose(glm::inverse(transform));
   }
 
   void BeginFrame(PBRPassData& pbrPassData, const glm::vec4& clearColor, Camera& camera)
   {
     pbrPassData.RenderPass->SetRenderState(pbrPassData.RenderPassState);
-    pbrPassData.RenderPass->SetShaderProgram("assets/shaders/PBR.glsl");
-
     pbrPassData.RenderPass->RecordCommandBuffer([&clearColor, &camera](Device& device, RenderingAPI& api)
       {
         api.SetClearColor(clearColor);
@@ -147,36 +184,38 @@ namespace Pistachio
     );
   }
 
-  void Draw(const MaterialMesh& materialMesh, Camera& camera, Device& device, PBRPassData& pbrPassData)
+  void Draw(const StaticMesh& mesh, const PBRMetallicRoughnessMaterial& material, Camera& camera, Device& device, PBRPassData& pbrPassData)
   {
     AttributeLayoutDescriptor attributeDesc;
-    attributeDesc.push_back({ materialMesh.Mesh.PositionBuffer, 0, 1, { {materialMesh.Mesh.PositionBuffer->Descriptor.DataType, "a_Position"} } });
-    attributeDesc.push_back({ materialMesh.Mesh.NormalBuffer, 1, 2, { {materialMesh.Mesh.NormalBuffer->Descriptor.DataType, "a_Normal"} } });
+    attributeDesc.push_back({ mesh.PositionBuffer, 0, 1, { {mesh.PositionBuffer->Descriptor.DataType, "a_Position"} } });
+    
+    if (mesh.NormalBuffer)
+      attributeDesc.push_back({ mesh.NormalBuffer, 1, 2, { {mesh.NormalBuffer->Descriptor.DataType, "a_Normal"} } });
 
-    if (materialMesh.Mesh.TexCoordBuffer_0)
-      attributeDesc.push_back({ materialMesh.Mesh.TexCoordBuffer_0, 2, 3, { {materialMesh.Mesh.TexCoordBuffer_0->Descriptor.DataType, "a_Texcoord"} } });
+    if (mesh.TexCoordBuffer_0)
+      attributeDesc.push_back({ mesh.TexCoordBuffer_0, 2, 3, { {mesh.TexCoordBuffer_0->Descriptor.DataType, "a_Texcoord"} } });
 
-    AttributeLayout& attributebuteLayout = device.RequestAttributeLayout(attributeDesc, materialMesh.Mesh.IndexBuffer->RendererID);
+    AttributeLayout& attributebuteLayout = device.RequestAttributeLayout(attributeDesc, mesh.IndexBuffer->RendererID);
 
-    uint32_t count = materialMesh.Mesh.GetIndexCount();
+    uint32_t count = mesh.GetIndexCount();
     RendererID vao = attributebuteLayout.RendererID;
-    uint32_t indexBufferBaseType = ShaderDataTypeToOpenGLBaseType(materialMesh.Mesh.IndexBuffer->Descriptor.DataType);
-    int64_t colorSamplerId = materialMesh.Material.ColorMap ? materialMesh.Material.ColorMap->RendererID : -1;
-    int64_t metallicRoughnessSamplerId = materialMesh.Material.MetallicRoughnessMap ? materialMesh.Material.MetallicRoughnessMap->RendererID : -1;
+    uint32_t indexBufferBaseType = ShaderDataTypeToOpenGLBaseType(mesh.IndexBuffer->Descriptor.DataType);
+    int64_t colorSamplerId = material.ColorMap ? material.ColorMap->RendererID : -1;
+    int64_t metallicRoughnessSamplerId = material.MetallicRoughnessMap ? material.MetallicRoughnessMap->RendererID : -1;
 
-    pbrPassData.RenderPass->RecordCommandBuffer([&camera, vao, count, indexBufferBaseType, colorSamplerId, metallicRoughnessSamplerId, &pbrPassData](Device& device, RenderingAPI& api)
+    pbrPassData.RenderPass->RecordCommandBuffer([&camera, vao, count, indexBufferBaseType, colorSamplerId, metallicRoughnessSamplerId, &pbrPassData, &material](Device& device, RenderingAPI& api)
       {
         if (colorSamplerId > 0)
           api.BindSampler(colorSamplerId, 0);
         if (metallicRoughnessSamplerId > 0)
           api.BindSampler(metallicRoughnessSamplerId, 1);
-        api.BindBuffer(UNIFORM_BUFFER_TARGET, pbrPassData.ModelUniformBuffer.DeviceBuffer->RendererID, 1);
-        api.BindBuffer(UNIFORM_BUFFER_TARGET, pbrPassData.MaterialUniformBuffer.DeviceBuffer->RendererID, 2);
+        api.BindBuffer(UNIFORM_BUFFER_TARGET, pbrPassData.DevicePerMeshUniformBuffer->RendererID, 1);
+        api.BindBuffer(UNIFORM_BUFFER_TARGET, material.DeviceUniformBuffer->RendererID, 2);
         api.DrawIndexed(vao, count, PRIMITIVE_TRIANGLES, indexBufferBaseType);
 
         camera.GetBuffer()->Lock();
-        pbrPassData.ModelUniformBuffer.DeviceBuffer->Lock(); // lock buffer to prevent CPU from writing before the draw call is done
-        pbrPassData.MaterialUniformBuffer.DeviceBuffer->Lock(); // lock buffer to prevent CPU from writing before the draw call is done
+        pbrPassData.DevicePerMeshUniformBuffer->Lock(); // lock buffer to prevent CPU from writing before the draw call is done
+        material.DeviceUniformBuffer->Lock();
       }
     );
   }

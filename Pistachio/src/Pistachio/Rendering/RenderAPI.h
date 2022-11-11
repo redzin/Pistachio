@@ -34,8 +34,8 @@ namespace Pistachio
     virtual void SetClearDepth(const float depth) const = 0;
     virtual void SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height) const = 0;
 
+    virtual RendererID CreateShader(ShaderDescriptor shaderDescriptor) const = 0;
     virtual RendererID CreateShader(const std::string& vertexSrc, const std::string& fragmentSrc) const = 0;
-    virtual RendererID CreateShader(const std::string& path) const = 0;
     virtual void DeleteShader(RendererID& shader) const = 0;
     virtual void UseShaderProgram(const RendererID& shader) const = 0;
     virtual RendererID CreatePersistenBuffer(const BufferDescriptor descriptor) const = 0;

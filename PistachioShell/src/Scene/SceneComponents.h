@@ -39,78 +39,65 @@ namespace Pistachio
 
   };
 
+  struct PBRMaterialUniformData
+  {
+    glm::vec4 ColorFactor; // w coordinate is unused but necessary for std140 padding
+    glm::vec2 MetallicRoughnessFactor; // x is metallic factor, y is roughness factor
+  };
+
   struct PBRMetallicRoughnessMaterial
   {
     PBRMetallicRoughnessMaterial();
-    PBRMetallicRoughnessMaterial(glm::vec4 colorFactor, float metallicFactor, float roughnessFactor);
 
+    void SetUpUniforms(Device& device);
+    void SetUpUniforms(Device& device, PBRMaterialUniformData data);
+    void UpdateUniforms();
+    void UpdateUniforms(PBRMaterialUniformData data);
     void SetUpColorTexture(Device& device, SamplerDescriptor& colorSamplerDescriptor, const Image& image);
     void SetUpMetallicRoughnessMap(Device& device, SamplerDescriptor& metallicRoughnessSamplerDescriptor, const Image& image);
     void SetUpNormalMap(Device& device, SamplerDescriptor& normalSamplerDescriptor, const Image& image);
 
-    glm::vec4 ColorFactor;
-    float MetallicFactor;
-    float RoughnessFactor;
+    PBRMaterialUniformData UniformData;
+    Ref<Buffer> DeviceUniformBuffer;
 
     Ref<Sampler> ColorMap;
     Ref<Sampler> MetallicRoughnessMap;
     Ref<Sampler> NormalMap;
-    
-  };
 
-  struct PBRModelUniformData
-  {
-    glm::mat4 ModelTransform;
-    glm::mat4 NormalMatrix;
   };
+  ShaderDescriptor GenerateShaderDescriptor(PBRMetallicRoughnessMaterial material);
+  Hash GetHash(PBRMetallicRoughnessMaterial material);
 
-  struct PBRMaterialUniformData
-  {
-    glm::vec4 colorFactor;
-    glm::vec2 metallicRoughnessFactor;
-    //float metallicFactor;
-    //float roughnessFactor;
-  };
+  //struct PBRModelUniformData
+  //{
+  //  glm::mat4 ModelTransform;
+  //  glm::mat4 NormalMatrix;
+  //};
 
-  struct PBRModelUniformBuffer
-  {
-    PBRModelUniformData Data;
-    Ref<Buffer> DeviceBuffer;
-  };
-
-  struct PBRMaterialUniformBuffer
-  {
-    PBRMaterialUniformData Data;
-    Ref<Buffer> DeviceBuffer;
-  };
+  //struct PBRModelUniformBuffer
+  //{
+  //  PBRModelUniformData Data;
+  //  Ref<Buffer> DeviceBuffer;
+  //};
 
   struct PBRPassData
   {
+    //std::unordered_map<Hash, Ref<RenderPass>> RenderPasses;
+    
+    Ref<RenderPass> RenderPass; // keep unique render pass per shader/material on the render graph, and use Hashes to request them
+    Ref<Buffer> DevicePerMeshUniformBuffer;
+    
     RenderPassState RenderPassState;
-    Ref<RenderPass> RenderPass;
-    PBRModelUniformBuffer ModelUniformBuffer;
-    PBRMaterialUniformBuffer MaterialUniformBuffer;
     Ref<Attachment> ColorAttachment;
     Ref<Attachment> DepthAttachment;
+
   };
   PBRPassData CreatePBRPass(Device& device, RenderGraph& renderGraph);
   void ResizeAttachments(PBRPassData& pbrPassData, Device& device, uint32_t viewportWidth, uint32_t viewportHeight);
   void UpdateModelUniformBuffer(PBRPassData& pbrPassData, const Transform& transform);
-  void UpdateMaterialUniformBuffer(PBRPassData& pbrPassData, PBRMetallicRoughnessMaterial material);
   void BeginFrame(PBRPassData& pbrPassData, const glm::vec4& clearColor, Camera& camera);
 
-  struct MaterialMesh
-  {
-    StaticMesh Mesh;
-    PBRMetallicRoughnessMaterial Material;
-  };
-
-  void Draw(const MaterialMesh& materialMesh, Camera& camera, Device& device, PBRPassData& pbrPassData);
-
-  struct Model
-  {
-    std::vector<MaterialMesh> Meshes;
-  };
+  void Draw(const StaticMesh& materialMesh, const PBRMetallicRoughnessMaterial& material, Camera& camera, Device& device, PBRPassData& pbrPassData);
 
 }
 
