@@ -88,17 +88,6 @@ namespace Pistachio
     device.UploadSamplerData(NormalMap, image);
   }
 
-  ShaderDescriptor GenerateShaderDescriptor(PBRMetallicRoughnessMaterial material)
-  {
-
-    ShaderDescriptor shaderDescriptor;
-    shaderDescriptor.Path = "assets/shaders/PBR.glsl";
-    shaderDescriptor.PrependSource += "#define _ENABLE_TEXCOORD_0";
-
-    return shaderDescriptor;
-
-  }
-
   Hash GetHash(PBRMetallicRoughnessMaterial material)
   {
     Hasher hasher;
@@ -115,12 +104,27 @@ namespace Pistachio
     return hasher.get();
   }
 
+  ShaderDescriptor GenerateShaderDescriptor(const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh)
+  {
+    ShaderDescriptor shaderDescriptor;
+    shaderDescriptor.Path = "assets/shaders/PBR.glsl";
+
+    if (mesh.TexCoordBuffer_0)
+      shaderDescriptor.PrependSource += "#define _ENABLE_TEXCOORD_0\n";
+
+    if (material.ColorMap)
+      shaderDescriptor.PrependSource += "#define _ENABLE_COLOR_TEXTURE\n";
+
+    if (material.MetallicRoughnessMap)
+      shaderDescriptor.PrependSource += "#define _ENABLE_METALLIC_ROUGHNESS_TEXTURE\n";
+
+    return shaderDescriptor;
+  }
+
+
   PBRPassData CreatePBRPass(Device& device, RenderGraph& renderGraph)
   {
     PBRPassData pbrPassData;
-
-    pbrPassData.RenderPass = CreateRef<RenderPass>("PBR Pass");
-    renderGraph.AddPass(pbrPassData.RenderPass);
 
     pbrPassData.RenderPassState.Capabilities = { Capability::DepthTest, Capability::Blend };
     pbrPassData.RenderPassState.DepthFunction = DepthFunction::LEqual;
@@ -130,6 +134,9 @@ namespace Pistachio
     BufferDescriptor modelUniformBufferDescriptor;
     modelUniformBufferDescriptor.Size = 2 * sizeof(glm::mat4);
     pbrPassData.DevicePerMeshUniformBuffer = device.CreateBuffer(modelUniformBufferDescriptor);
+
+    pbrPassData.PrePass = CreateRef<RenderPass>("PBR_Pass_PrePass");
+    renderGraph.AddPass(pbrPassData.PrePass);
 
     return pbrPassData;
   }
@@ -155,9 +162,16 @@ namespace Pistachio
       pbrPassData.ColorAttachment = device.CreateAttachment(colorAttachmentDesc);
       pbrPassData.DepthAttachment = device.CreateAttachment(depthAttachmentDesc);
 
-      pbrPassData.RenderPass->ClearAttachmentOutputs();
-      pbrPassData.RenderPass->AddAttachmentOutput(pbrPassData.ColorAttachment);
-      pbrPassData.RenderPass->AddAttachmentOutput(pbrPassData.DepthAttachment);
+      pbrPassData.PrePass->ClearAttachmentOutputs();
+      pbrPassData.PrePass->AddAttachmentOutput(pbrPassData.ColorAttachment);
+      pbrPassData.PrePass->AddAttachmentOutput(pbrPassData.DepthAttachment);
+
+      for (auto& [hash, renderPass] : pbrPassData.RenderPasses)
+      {
+        renderPass->ClearAttachmentOutputs();
+        renderPass->AddAttachmentOutput(pbrPassData.ColorAttachment);
+        renderPass->AddAttachmentOutput(pbrPassData.DepthAttachment);
+      }
     }
   }
 
@@ -173,8 +187,8 @@ namespace Pistachio
 
   void BeginFrame(PBRPassData& pbrPassData, const glm::vec4& clearColor, Camera& camera)
   {
-    pbrPassData.RenderPass->SetRenderState(pbrPassData.RenderPassState);
-    pbrPassData.RenderPass->RecordCommandBuffer([&clearColor, &camera](Device& device, RenderingAPI& api)
+    pbrPassData.PrePass->SetRenderState(pbrPassData.RenderPassState);
+    pbrPassData.PrePass->RecordCommandBuffer([&clearColor, &camera](Device& device, RenderingAPI& api)
       {
         api.SetClearColor(clearColor);
         api.SetClearDepth(1.0f);
@@ -182,6 +196,21 @@ namespace Pistachio
         api.BindBuffer(UNIFORM_BUFFER_TARGET, camera.GetBuffer()->RendererID, 0);
       }
     );
+  }
+
+  Ref<RenderPass> AddNewRenderPass(PBRPassData& pbrPassData, const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh, RenderGraph& renderGraph)
+  {
+    Hash materialHash = GetHash(material);
+    ShaderDescriptor shaderDescriptor = GenerateShaderDescriptor(material, mesh);
+
+    pbrPassData.RenderPasses[materialHash] = CreateRef<RenderPass>(std::move("PBR_Pass_" + std::to_string(materialHash)));
+    pbrPassData.RenderPasses[materialHash]->SetShaderProgram(shaderDescriptor);
+    pbrPassData.RenderPasses[materialHash]->SetRenderState(pbrPassData.RenderPassState);
+    pbrPassData.RenderPasses[materialHash]->AddAttachmentOutput(pbrPassData.ColorAttachment);
+    pbrPassData.RenderPasses[materialHash]->AddAttachmentOutput(pbrPassData.DepthAttachment);
+
+    renderGraph.AddPass(pbrPassData.RenderPasses[materialHash]);
+    return pbrPassData.RenderPasses[materialHash];
   }
 
   void Draw(const StaticMesh& mesh, const PBRMetallicRoughnessMaterial& material, Camera& camera, Device& device, PBRPassData& pbrPassData)
@@ -200,10 +229,13 @@ namespace Pistachio
     uint32_t count = mesh.GetIndexCount();
     RendererID vao = attributebuteLayout.RendererID;
     uint32_t indexBufferBaseType = ShaderDataTypeToOpenGLBaseType(mesh.IndexBuffer->Descriptor.DataType);
-    int64_t colorSamplerId = material.ColorMap ? material.ColorMap->RendererID : -1;
-    int64_t metallicRoughnessSamplerId = material.MetallicRoughnessMap ? material.MetallicRoughnessMap->RendererID : -1;
+    int32_t colorSamplerId = material.ColorMap ? material.ColorMap->RendererID : -1;
+    int32_t metallicRoughnessSamplerId = material.MetallicRoughnessMap ? material.MetallicRoughnessMap->RendererID : -1;
 
-    pbrPassData.RenderPass->RecordCommandBuffer([&camera, vao, count, indexBufferBaseType, colorSamplerId, metallicRoughnessSamplerId, &pbrPassData, &material](Device& device, RenderingAPI& api)
+    Hash materialHash = GetHash(material);
+    Ref<RenderPass> renderPass = pbrPassData.RenderPasses[materialHash];
+
+    renderPass->RecordCommandBuffer([&camera, vao, count, indexBufferBaseType, colorSamplerId, metallicRoughnessSamplerId, &pbrPassData, &material](Device& device, RenderingAPI& api)
       {
         if (colorSamplerId > 0)
           api.BindSampler(colorSamplerId, 0);

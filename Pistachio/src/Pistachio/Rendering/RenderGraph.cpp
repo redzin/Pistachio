@@ -24,10 +24,15 @@ namespace Pistachio
     Capability::Blend
   };
 
+  static Hash previousShaderHash = 0;
+  static RendererID previousFramebuffer = -1;
   void RenderGraph::Render(Device& device, uint32_t viewport_width, uint32_t viewport_height)
   {
     for (const auto& pass : m_RenderPasses)
     {
+      if (pass->m_CommandBuffer.size() < 1)
+        continue;
+
       device.BeginNewFrame();
 
       Framebuffer& framebuffer = device.RequestFramebuffer(pass->m_AttachmentOuputs);
@@ -43,8 +48,13 @@ namespace Pistachio
       device.m_RenderingAPI->SetBlendFunction(pass->m_RenderState.BlendState.SourceBlendFunction, pass->m_RenderState.BlendState.DestinationBlendFunction);
 
       device.m_RenderingAPI->SetViewport(0, 0, viewport_width, viewport_height);
-      device.m_RenderingAPI->UseShaderProgram(device.RequestShader(pass->m_Shader)->RendererID);
-      device.m_RenderingAPI->BindFramebuffer(framebuffer);
+      
+      Hash shaderHash = GetHash(pass->m_Shader);
+      if (pass->m_Shader.Path != "" && shaderHash != previousShaderHash) // only switch shader if necessary
+        device.m_RenderingAPI->UseShaderProgram(device.RequestShader(pass->m_Shader)->RendererID);
+
+      if (previousFramebuffer != framebuffer) // only switch framebuffer if necessary
+        device.m_RenderingAPI->BindFramebuffer(framebuffer);
 
       for (const auto& cap : disabledCapabilities)
         device.m_RenderingAPI->Disable(cap);

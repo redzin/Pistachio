@@ -103,6 +103,13 @@ namespace Pistachio
           m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
 
+
+        case ExampleScene::MetalRoughSpheresNoTextures:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/MetalRoughSpheresNoTextures/glTF/MetalRoughSpheresNoTextures.gltf");
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          break;
+
         case ExampleScene::FlightHelmet:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
@@ -205,7 +212,7 @@ namespace Pistachio
       }
     );
 
-    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::MetalRoughSpheres });
+    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::Duck });
 
     PSTC_INFO("{0} attached!", GetName());
   }
@@ -241,7 +248,8 @@ namespace Pistachio
     Camera& camera = GetActiveCamera();
     glm::uvec2 viewportDimensions = camera.GetViewportDimensions();
 
-    m_SceneRenderer->Render(device, m_Scenes[m_SelectedSceneIndex], camera, viewportDimensions.x, viewportDimensions.y, m_ClearColor);
+    if (m_Scenes.size() > 0)
+      m_SceneRenderer->Render(device, m_Scenes[m_SelectedSceneIndex], camera, viewportDimensions.x, viewportDimensions.y, m_ClearColor);
   }
 
   void EditorLayer::OnGuiRender(Window& window, EventLibrary& eventLibrary)

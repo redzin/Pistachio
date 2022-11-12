@@ -10,6 +10,7 @@ namespace Pistachio
     OneMillionSprites,
     Duck,
     MetalRoughSpheres,
+    MetalRoughSpheresNoTextures,
     FlightHelmet,
     Cube,
     Box,

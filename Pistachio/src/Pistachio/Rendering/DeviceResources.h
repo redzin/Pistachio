@@ -62,13 +62,13 @@ namespace Pistachio
     std::string Path;
     std::string PrependSource; // prepended after the version declaration, but before anything else
   };
+  Hash GetHash(ShaderDescriptor descriptor);
 
   struct Shader
   {
     RendererID RendererID;
     ShaderDescriptor Descriptor;
   };
-
 
   /////////////////////////////////////////////////////////
   /// Buffers

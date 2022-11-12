@@ -43,12 +43,10 @@ namespace Pistachio
     
   }
 
-  void RenderScene(PBRPassData& pbrPassData, Device& device, Scene& scene, Camera& camera, glm::vec4 clearColor, uint32_t viewportWidth, uint32_t viewportHeight)
+  void RenderScene(PBRPassData& pbrPassData, Device& device, RenderGraph& renderGraph, Scene& scene, Camera& camera, glm::vec4 clearColor, uint32_t viewportWidth, uint32_t viewportHeight)
   {
     ResizeAttachments(pbrPassData, device, viewportWidth, viewportHeight);
     BeginFrame(pbrPassData, clearColor, camera);
-
-    Hash previousMaterialHash = 0;
 
     auto modelsView = scene.GetGroup<PBRMetallicRoughnessMaterial>(Scene::GroupGet<StaticMesh, Transform>);
     for (EntityID modelId : modelsView)
@@ -61,16 +59,11 @@ namespace Pistachio
 
       Hash materialHash = GetHash(material);
       
-      if (materialHash != previousMaterialHash)
+      if (pbrPassData.RenderPasses.count(materialHash) < 1)
       {
-        previousMaterialHash = materialHash;
-        //UpdateMaterialUniformBuffer(pbrPassData, material);
-
-        ShaderDescriptor shaderDescriptor = GenerateShaderDescriptor(material);
-        pbrPassData.RenderPass->SetShaderProgram(shaderDescriptor);
-
+        AddNewRenderPass(pbrPassData, material, mesh, renderGraph);
       }
-
+      
       Draw(mesh, material, camera, device, pbrPassData);
       
     }
@@ -100,7 +93,7 @@ namespace Pistachio
   {
 
     RenderScene(m_SpritePassData, device, scene, camera, clearColor, viewportWidth, viewportHeight);
-    RenderScene(m_PBRPassData, device, scene, camera, clearColor, viewportWidth, viewportHeight);
+    RenderScene(m_PBRPassData, device, m_RenderGraph, scene, camera, clearColor, viewportWidth, viewportHeight);
 
     m_RenderGraph.Render(device, viewportWidth, viewportHeight);
 

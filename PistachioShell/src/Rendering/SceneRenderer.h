@@ -19,9 +19,10 @@ namespace Pistachio
     std::map<std::string, Ref<Attachment>> GetDisplayReadyAttachments();
 
   private:
-    SpritePassData m_SpritePassData;
-    PBRPassData m_PBRPassData;
     RenderGraph m_RenderGraph;
+    SpritePassData m_SpritePassData;
+
+    PBRPassData m_PBRPassData;
   };
 
 }
