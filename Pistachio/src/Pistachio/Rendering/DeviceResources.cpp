@@ -46,5 +46,15 @@ namespace Pistachio
     m_Device.DeleteAttachment(*this);
   }
 
+  Hash GetHash(ShaderDescriptor descriptor)
+  {
+    Hasher hasher;
+    for (const auto& c : descriptor.Path)
+      hasher.hash(c);
+    for (const auto& c : descriptor.PrependSource)
+      hasher.hash(c);
+    return hasher.get();
+  }
+
 }
 

@@ -187,16 +187,16 @@ namespace Pistachio
   PBRMetallicRoughnessMaterial GetMaterial(Device& device, const tinygltf::Model& gltfObject, const tinygltf::Primitive& gltfPrimitive)
   {
     PBRMetallicRoughnessMaterial material;
-    material.SetUpUniforms(device, { glm::vec4(1.0f, 0.766f, 0.336f, 1.0f), glm::vec2(1.0, 0.0) });// default to gold
+    material.SetUpUniforms(device, { glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec2(1.0, 1.0) });// gltf standard default: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.pdf
     if (gltfPrimitive.material >= 0)
     {
       const auto& gltfMaterial = gltfObject.materials[gltfPrimitive.material];
 
       for (int i = 0; i < 4; i++)
-        material.UniformData.ColorFactor[i] = gltfMaterial.pbrMetallicRoughness.baseColorFactor[i];
+        material.UniformData.ColorFactor[i] = static_cast<float>(gltfMaterial.pbrMetallicRoughness.baseColorFactor[i]);
 
-      material.UniformData.MetallicRoughnessFactor.x = gltfMaterial.pbrMetallicRoughness.metallicFactor;
-      material.UniformData.MetallicRoughnessFactor.y = gltfMaterial.pbrMetallicRoughness.roughnessFactor;
+      material.UniformData.MetallicRoughnessFactor.x = static_cast<float>(gltfMaterial.pbrMetallicRoughness.metallicFactor);
+      material.UniformData.MetallicRoughnessFactor.y = static_cast<float>(gltfMaterial.pbrMetallicRoughness.roughnessFactor);
       material.UpdateUniforms();
 
       if (gltfMaterial.pbrMetallicRoughness.baseColorTexture.index >= 0)

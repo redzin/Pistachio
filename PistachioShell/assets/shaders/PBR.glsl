@@ -133,32 +133,34 @@ void main()
   //lightPositions[3] = cameraPosition +  0.0f * up + -5.0f * right; // to be input from CPU
   //lightPositions[2] = cameraPosition +  0.0f * up +  5.0f * right; // to be input from CPU
   
-  lightPositions[0] = vec3(0.0f,  10.0f,  10.0f); // to be input from CPU
-  lightPositions[1] = vec3(0.0f, -10.0f,  10.0f); // to be input from CPU
-  lightPositions[3] = vec3(0.0f,  10.0f, -20.0f); // to be input from CPU
-  lightPositions[2] = vec3(0.0f, -10.0f, -20.0f); // to be input from CPU
+  lightPositions[0] = vec3(-0.0f,  10.0f,  20.0f); // to be input from CPU
+  lightPositions[1] = vec3( 0.0f, -10.0f,  20.0f); // to be input from CPU
+  lightPositions[3] = vec3(-0.0f,  10.0f, -20.0f); // to be input from CPU
+  lightPositions[2] = vec3( 0.0f, -10.0f, -20.0f); // to be input from CPU
 
-  lightColors[0] = vec3(1.0f, 1.0f, 1.0f) * 200.0f; // to be input from CPU
-  lightColors[1] = vec3(1.0f, 1.0f, 1.0f) * 200.0f; // to be input from CPU
-  lightColors[2] = vec3(1.0f, 1.0f, 1.0f) * 200.0f; // to be input from CPU
-  lightColors[3] = vec3(1.0f, 1.0f, 1.0f) * 200.0f; // to be input from CPU
+  lightColors[0] = vec3(1.0f, 1.0f, 1.0f) * 1000.0f; // to be input from CPU
+  lightColors[1] = vec3(1.0f, 1.0f, 1.0f) * 1000.0f; // to be input from CPU
+  lightColors[2] = vec3(1.0f, 1.0f, 1.0f) * 1000.0f; // to be input from CPU
+  lightColors[3] = vec3(1.0f, 1.0f, 1.0f) * 1000.0f; // to be input from CPU
 
-  
-#ifdef _ENABLE_TEXCOORD_0
+
+#if defined _ENABLE_TEXCOORD_0 && defined _ENABLE_COLOR_TEXTURE
   //Albedo from color texture
-  vec3 color = colorFactor.xyz * texture(u_ColorSampler, in_Texcoord_0).xyz; // todo: move colorfactor after sRGB decoding / color correcting
+  vec3 color = texture(u_ColorSampler, in_Texcoord_0).xyz; // todo: move colorfactor after sRGB decoding / color correcting
   color.r = pow(color.r, 2.2f);
   color.g = pow(color.g, 2.2f);
   color.b = pow(color.b, 2.2f);
-  float metallic = metallicRoughnessFactor[0] * texture(u_MetallicRoughnessSampler, in_Texcoord_0).b;
-  float roughness = max(metallicRoughnessFactor[1] * texture(u_MetallicRoughnessSampler, in_Texcoord_0).g, 0.05f);
-
+  //color *= colorFactor.xyz;
 #else
-  
   vec3 color = colorFactor.xyz;
-  float metallic = metallicRoughnessFactor[0];
-  float roughness = max(metallicRoughnessFactor[1], 0.05f);
+#endif
 
+#if defined _ENABLE_TEXCOORD_0 && defined _ENABLE_METALLIC_ROUGHNESS_TEXTURE
+  float metallic = metallicRoughnessFactor.x * texture(u_MetallicRoughnessSampler, in_Texcoord_0).b;
+  float roughness = max(metallicRoughnessFactor.y * texture(u_MetallicRoughnessSampler, in_Texcoord_0).g, 0.05f);
+#else
+  float metallic = metallicRoughnessFactor.x;
+  float roughness = max(metallicRoughnessFactor.y, 0.05f);
 #endif
 
   vec3 N = normalize(in_Normal);

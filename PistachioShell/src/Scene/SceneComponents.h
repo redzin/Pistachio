@@ -65,26 +65,14 @@ namespace Pistachio
     Ref<Sampler> NormalMap;
 
   };
-  ShaderDescriptor GenerateShaderDescriptor(PBRMetallicRoughnessMaterial material);
   Hash GetHash(PBRMetallicRoughnessMaterial material);
 
-  //struct PBRModelUniformData
-  //{
-  //  glm::mat4 ModelTransform;
-  //  glm::mat4 NormalMatrix;
-  //};
-
-  //struct PBRModelUniformBuffer
-  //{
-  //  PBRModelUniformData Data;
-  //  Ref<Buffer> DeviceBuffer;
-  //};
+  ShaderDescriptor GenerateShaderDescriptor(const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh);
 
   struct PBRPassData
   {
-    //std::unordered_map<Hash, Ref<RenderPass>> RenderPasses;
-    
-    Ref<RenderPass> RenderPass; // keep unique render pass per shader/material on the render graph, and use Hashes to request them
+    Ref<RenderPass> PrePass;
+    std::map<Hash, Ref<RenderPass>> RenderPasses;
     Ref<Buffer> DevicePerMeshUniformBuffer;
     
     RenderPassState RenderPassState;
@@ -96,6 +84,8 @@ namespace Pistachio
   void ResizeAttachments(PBRPassData& pbrPassData, Device& device, uint32_t viewportWidth, uint32_t viewportHeight);
   void UpdateModelUniformBuffer(PBRPassData& pbrPassData, const Transform& transform);
   void BeginFrame(PBRPassData& pbrPassData, const glm::vec4& clearColor, Camera& camera);
+  Ref<RenderPass> AddNewRenderPass(PBRPassData& pbrPassData, const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh, RenderGraph& renderGraph);
+  
 
   void Draw(const StaticMesh& materialMesh, const PBRMetallicRoughnessMaterial& material, Camera& camera, Device& device, PBRPassData& pbrPassData);
 

@@ -108,9 +108,14 @@ namespace Pistachio
             eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::OneMillionSprites });
           }
 
-          if (ImGui::MenuItem("MetalRoughSphere"))
+          if (ImGui::MenuItem("MetalRoughSpheres"))
           {
-            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::MetalRoughSpheres});
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::MetalRoughSpheres });
+          }
+
+          if (ImGui::MenuItem("MetalRoughSpheresNoTextures"))
+          {
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::MetalRoughSpheresNoTextures });
           }
 
           if (ImGui::MenuItem("Duck"))
