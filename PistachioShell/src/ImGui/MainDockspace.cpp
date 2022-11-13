@@ -108,21 +108,6 @@ namespace Pistachio
             eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::OneMillionSprites });
           }
 
-          if (ImGui::MenuItem("MetalRoughSpheres"))
-          {
-            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::MetalRoughSpheres });
-          }
-
-          if (ImGui::MenuItem("MetalRoughSpheresNoTextures"))
-          {
-            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::MetalRoughSpheresNoTextures });
-          }
-
-          if (ImGui::MenuItem("Duck"))
-          {
-            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::Duck });
-          }
-
           if (ImGui::MenuItem("Cube"))
           {
             eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::Cube });
@@ -136,6 +121,21 @@ namespace Pistachio
           if (ImGui::MenuItem("BoxWithVertexColors"))
           {
             eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::BoxVertexColors });
+          }
+
+          if (ImGui::MenuItem("Duck"))
+          {
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::Duck });
+          }
+
+          if (ImGui::MenuItem("MetalRoughSpheres"))
+          {
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::MetalRoughSpheres });
+          }
+
+          if (ImGui::MenuItem("EnvironmentTest"))
+          {
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::EnvironmentTest });
           }
 
           if (ImGui::MenuItem("FlightHelmet"))

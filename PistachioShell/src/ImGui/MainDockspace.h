@@ -8,13 +8,13 @@ namespace Pistachio
   {
     None = 0,
     OneMillionSprites,
-    Duck,
-    MetalRoughSpheres,
-    MetalRoughSpheresNoTextures,
-    FlightHelmet,
     Cube,
     Box,
     BoxVertexColors,
+    Duck,
+    MetalRoughSpheres,
+    EnvironmentTest,
+    FlightHelmet,
     Buggy,
     ABeautifulGame,
     Sponza

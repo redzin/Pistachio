@@ -117,6 +117,15 @@ namespace Pistachio
     if (mesh.TexCoordBuffer_0)
       shaderDescriptor.PrependSource += "#define _ENABLE_TEXCOORD_0\n";
 
+    if (mesh.ColorBuffer)
+    {
+      uint32_t componentCount = DataTypeComponentCount(mesh.ColorBuffer->Descriptor.DataType);
+      if(componentCount == 3)
+        shaderDescriptor.PrependSource += "#define _ENABLE_COLOR_BUFFER_3\n";
+      else
+        shaderDescriptor.PrependSource += "#define _ENABLE_COLOR_BUFFER_4\n";
+    }
+
     if (material.ColorMap)
       shaderDescriptor.PrependSource += "#define _ENABLE_COLOR_TEXTURE\n";
 
@@ -231,9 +240,9 @@ namespace Pistachio
 
     if (mesh.ColorBuffer)
       if (DataTypeComponentCount(mesh.ColorBuffer->Descriptor.DataType) == 3)
-        attributeDesc.push_back({ mesh.NormalBuffer, 3, 4, { {mesh.NormalBuffer->Descriptor.DataType, "a_Color"} } });
+        attributeDesc.push_back({ mesh.ColorBuffer, 3, 4, { {mesh.ColorBuffer->Descriptor.DataType, "a_Color"} } });
       else
-        attributeDesc.push_back({ mesh.NormalBuffer, 4, 5, { {mesh.NormalBuffer->Descriptor.DataType, "a_Color"} } });
+        attributeDesc.push_back({ mesh.ColorBuffer, 4, 5, { {mesh.ColorBuffer->Descriptor.DataType, "a_Color"} } });
 
     AttributeLayout& attributebuteLayout = device.RequestAttributeLayout(attributeDesc, mesh.IndexBuffer->RendererID);
 

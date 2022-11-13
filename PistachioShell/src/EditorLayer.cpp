@@ -91,36 +91,12 @@ namespace Pistachio
         case ExampleScene::None:
           break;
 
-        case ExampleScene::Duck:
-
-          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Duck/glTF/Duck.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
-          break;
-
-        case ExampleScene::MetalRoughSpheres:
-
-          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
-          break;
-
-
-        case ExampleScene::MetalRoughSpheresNoTextures:
-
-          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/MetalRoughSpheresNoTextures/glTF/MetalRoughSpheresNoTextures.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
-          break;
-
-        case ExampleScene::FlightHelmet:
-
-          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
-          break;
-
         case ExampleScene::Cube:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Cube/glTF/Cube.gltf");
           m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
+
         case ExampleScene::Box:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Box/glTF/Box.gltf");
@@ -133,6 +109,29 @@ namespace Pistachio
           m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
 
+        case ExampleScene::Duck:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Duck/glTF/Duck.gltf");
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          break;
+
+        case ExampleScene::MetalRoughSpheres:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf");
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          break;
+          
+        case ExampleScene::EnvironmentTest:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/EnvironmentTest/glTF/EnvironmentTest.gltf");
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          break;
+
+        case ExampleScene::FlightHelmet:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          break;
 
         case ExampleScene::Buggy:
 

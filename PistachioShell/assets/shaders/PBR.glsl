@@ -81,7 +81,11 @@ layout(location = 2) in vec2 in_Texcoord_0;
 #endif
 
 #ifdef _ENABLE_COLOR_BUFFER_3
-layout(location = 3) in vec2 in_Color;
+layout(location = 3) in vec3 in_Color;
+#endif
+
+#ifdef _ENABLE_COLOR_BUFFER_4
+layout(location = 4) in vec4 in_Color;
 #endif
 
 layout(std140, binding = 0) uniform CameraData
@@ -178,7 +182,7 @@ void main()
   color.r = pow(color.r, 2.2f);
   color.g = pow(color.g, 2.2f);
   color.b = pow(color.b, 2.2f);
-  //color *= colorFactor.xyz;
+  color *= colorFactor.xyz;
 #else
   vec3 color = colorFactor.xyz;
 #endif

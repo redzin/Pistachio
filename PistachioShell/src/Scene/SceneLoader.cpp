@@ -263,13 +263,8 @@ namespace Pistachio
 
       const auto& gltfMesh = gltfObject.meshes[gltfNode.mesh];
 
-      int count = 0;
       for (const auto& gltfPrimitive : gltfMesh.primitives)
       {
-        //if (count > 0)
-        //  break;
-        count++;
-
         int positionAccessorIndex = -1;
         if (gltfPrimitive.attributes.count("POSITION") > 0)
           positionAccessorIndex = gltfPrimitive.attributes.at("POSITION");
@@ -290,7 +285,7 @@ namespace Pistachio
 
         BufferDescriptor positionBufferDescriptor;
         positionBufferDescriptor.Size = ComputeBufferSize(gltfPositionAccessor);
-        positionBufferDescriptor.DataType = GetDataType(gltfPositionAccessor);
+        positionBufferDescriptor.DataType = BufferDataType::Float3;
 
         model.Submeshes.push_back({ GetMaterial(device, gltfObject, gltfPrimitive), StaticMesh(device, gltfIndexAccessor.count, gltfPositionAccessor.count, indexBufferDescriptor, positionBufferDescriptor)});
 
@@ -300,6 +295,26 @@ namespace Pistachio
 
         ProcessBuffer((char*)mesh.IndexBuffer->MemoryPtr, gltfIndexAccessor, gltfIndexBufferView, gltfIndexBuffer);
         ProcessBuffer((char*)mesh.PositionBuffer->MemoryPtr, gltfPositionAccessor, gltfPositionBufferView, gltfPositionBuffer);
+
+        if (gltfPrimitive.attributes.count("COLOR_0") > 0)
+        {
+          int colorAccessorIndex = gltfPrimitive.attributes.at("COLOR_0");
+
+          const auto& gltfColorAccessor = gltfObject.accessors[colorAccessorIndex];
+          const auto& gltfcolorBufferView = gltfObject.bufferViews[gltfColorAccessor.bufferView];
+          const auto& gltfcolorBuffer = gltfObject.buffers[gltfcolorBufferView.buffer];
+
+          BufferDescriptor colorBufferDescriptor;
+          colorBufferDescriptor.Size = ComputeBufferSize(gltfColorAccessor);
+          colorBufferDescriptor.DataType = GetDataType(gltfColorAccessor);
+          mesh.SetupColorBuffer(device, colorBufferDescriptor);
+          ProcessBuffer((char*)mesh.ColorBuffer->MemoryPtr, gltfColorAccessor, gltfcolorBufferView, gltfcolorBuffer);
+
+        }
+        else
+        {
+          PSTC_WARN("Could not locate color buffer!");
+        }
 
         if (gltfPrimitive.attributes.count("NORMAL") > 0)
         {
