@@ -177,15 +177,11 @@ namespace Pistachio
           transform = glm::toMat4(rotQuaternion) * transform;
         }
 
-        glm::vec3 translation = glm::vec3(gltfNode.translation[0], gltfNode.translation[1], gltfNode.translation[2]);
-
-        if (gltfNode.name == "Castle_B1")
-          glm::vec3 translation = glm::vec3(gltfNode.translation[0], gltfNode.translation[1] + 5.0f, gltfNode.translation[2]);
-
-        if (gltfNode.name == "Castle_B2")
-          glm::vec3 translation = glm::vec3(gltfNode.translation[0], gltfNode.translation[1] + 5.0f, gltfNode.translation[2]);
-
-        transform = glm::translate(transform, translation);
+        if (gltfNode.translation.size() > 0)
+        {
+          glm::vec3 translation = glm::vec3(gltfNode.translation[0], gltfNode.translation[1], gltfNode.translation[2]);
+          transform = glm::translate(transform, translation);
+        }
       }
     }
     return transform;
@@ -294,7 +290,7 @@ namespace Pistachio
 
         BufferDescriptor positionBufferDescriptor;
         positionBufferDescriptor.Size = ComputeBufferSize(gltfPositionAccessor);
-        positionBufferDescriptor.DataType = BufferDataType::Float3;
+        positionBufferDescriptor.DataType = GetDataType(gltfPositionAccessor);
 
         model.Submeshes.push_back({ GetMaterial(device, gltfObject, gltfPrimitive), StaticMesh(device, gltfIndexAccessor.count, gltfPositionAccessor.count, indexBufferDescriptor, positionBufferDescriptor)});
 
@@ -376,7 +372,7 @@ namespace Pistachio
       if (gltfCamera.perspective.yfov != 0 && gltfCamera.perspective.aspectRatio != 0 && gltfCamera.perspective.znear != gltfCamera.perspective.zfar)
       {
         sceneEntity.AddComponent<CameraOrbitController>();
-        sceneEntity.AddComponent<SemanticNameComponent>(gltfCamera.name == "" ? "Untitled camera" : gltfCamera.name);
+        name = gltfCamera.name != "" ? gltfCamera.name : name != ""  ? name : "Untitled Camera";
         CameraOrbitController& camOrbitController = sceneEntity.GetComponent<CameraOrbitController>();
         sceneEntity.AddComponent<Camera>(
           camOrbitController.CreatePerspectiveCamera(
