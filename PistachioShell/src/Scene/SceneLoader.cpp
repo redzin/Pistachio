@@ -156,7 +156,7 @@ namespace Pistachio
   {
     bool hasTransform = gltfNode.matrix.size() > 0 || gltfNode.rotation.size() > 0 || gltfNode.translation.size() > 0 || gltfNode.scale.size() > 0;
 
-    glm::mat4 transform(1.0f);
+    glm::mat4 transform = glm::mat4(1.0f);
     if (hasTransform)
     {
 
@@ -169,7 +169,7 @@ namespace Pistachio
       else
       {
         if (gltfNode.scale.size() > 0)
-          glm::scale(transform, glm::vec3(gltfNode.scale[0], gltfNode.scale[1], gltfNode.scale[2]));
+          transform = glm::scale(transform, glm::vec3(gltfNode.scale[0], gltfNode.scale[1], gltfNode.scale[2]));
         
         if (gltfNode.rotation.size() > 0)
         {
@@ -177,8 +177,15 @@ namespace Pistachio
           transform = glm::toMat4(rotQuaternion) * transform;
         }
 
-        glm::translate(transform, glm::vec3(gltfNode.translation[0], gltfNode.translation[1], gltfNode.translation[2]));
+        glm::vec3 translation = glm::vec3(gltfNode.translation[0], gltfNode.translation[1], gltfNode.translation[2]);
 
+        if (gltfNode.name == "Castle_B1")
+          glm::vec3 translation = glm::vec3(gltfNode.translation[0], gltfNode.translation[1] + 5.0f, gltfNode.translation[2]);
+
+        if (gltfNode.name == "Castle_B2")
+          glm::vec3 translation = glm::vec3(gltfNode.translation[0], gltfNode.translation[1] + 5.0f, gltfNode.translation[2]);
+
+        transform = glm::translate(transform, translation);
       }
     }
     return transform;
@@ -249,16 +256,23 @@ namespace Pistachio
 
   void ProcessNode(Device& device, Scene& scene, const tinygltf::Model& gltfObject, const tinygltf::Node& gltfNode, SceneEntity parentEntity)
   {
-    SceneEntity sceneEntity = scene.CreateEntity(parentEntity);
 
-    sceneEntity.AddComponent<Transform>(GetTransform(gltfNode));
-    
+    SceneEntity sceneEntity = scene.CreateEntity(parentEntity);
+    Transform& transform = sceneEntity.AddComponent<Transform>(GetTransform(gltfNode));
+    SemanticNameComponent& name = sceneEntity.AddComponent<SemanticNameComponent>(gltfNode.name);
+
     if (gltfNode.mesh >= 0)
     {
+      Model& model = sceneEntity.AddComponent<Model>();
+
       const auto& gltfMesh = gltfObject.meshes[gltfNode.mesh];
 
+      int count = 0;
       for (const auto& gltfPrimitive : gltfMesh.primitives)
       {
+        //if (count > 0)
+        //  break;
+        count++;
 
         int positionAccessorIndex = -1;
         if (gltfPrimitive.attributes.count("POSITION") > 0)
@@ -282,8 +296,11 @@ namespace Pistachio
         positionBufferDescriptor.Size = ComputeBufferSize(gltfPositionAccessor);
         positionBufferDescriptor.DataType = BufferDataType::Float3;
 
-        PBRMetallicRoughnessMaterial& material = sceneEntity.AddComponent<PBRMetallicRoughnessMaterial>(GetMaterial(device, gltfObject, gltfPrimitive));
-        StaticMesh& mesh = sceneEntity.AddComponent<StaticMesh>(device, gltfIndexAccessor.count, gltfPositionAccessor.count, indexBufferDescriptor, positionBufferDescriptor);
+        model.Submeshes.push_back({ GetMaterial(device, gltfObject, gltfPrimitive), StaticMesh(device, gltfIndexAccessor.count, gltfPositionAccessor.count, indexBufferDescriptor, positionBufferDescriptor)});
+
+        MaterialMesh& materialMesh = model.Submeshes[model.Submeshes.size() - 1];
+        PBRMetallicRoughnessMaterial& material = materialMesh.Material;
+        StaticMesh& mesh = materialMesh.Mesh;
 
         ProcessBuffer((char*)mesh.IndexBuffer->MemoryPtr, gltfIndexAccessor, gltfIndexBufferView, gltfIndexBuffer);
         ProcessBuffer((char*)mesh.PositionBuffer->MemoryPtr, gltfPositionAccessor, gltfPositionBufferView, gltfPositionBuffer);

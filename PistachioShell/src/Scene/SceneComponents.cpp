@@ -15,6 +15,11 @@ namespace Pistachio
 
   }
 
+  void StaticMesh::SetupColorBuffer(Device& device, BufferDescriptor bufferDescriptor)
+  {
+    ColorBuffer = device.CreateBuffer(bufferDescriptor);
+  }
+
   void StaticMesh::SetupNormalBuffer(Device& device, BufferDescriptor bufferDescriptor)
   {
     NormalBuffer = device.CreateBuffer(bufferDescriptor);
@@ -213,16 +218,22 @@ namespace Pistachio
     return pbrPassData.RenderPasses[materialHash];
   }
 
-  void Draw(const StaticMesh& mesh, const PBRMetallicRoughnessMaterial& material, Camera& camera, Device& device, PBRPassData& pbrPassData)
+  void Draw(const StaticMesh& mesh, const PBRMetallicRoughnessMaterial& material, const Transform& transform, Camera& camera, Device& device, PBRPassData& pbrPassData)
   {
     AttributeLayoutDescriptor attributeDesc;
     attributeDesc.push_back({ mesh.PositionBuffer, 0, 1, { {mesh.PositionBuffer->Descriptor.DataType, "a_Position"} } });
-    
+
     if (mesh.NormalBuffer)
       attributeDesc.push_back({ mesh.NormalBuffer, 1, 2, { {mesh.NormalBuffer->Descriptor.DataType, "a_Normal"} } });
 
     if (mesh.TexCoordBuffer_0)
       attributeDesc.push_back({ mesh.TexCoordBuffer_0, 2, 3, { {mesh.TexCoordBuffer_0->Descriptor.DataType, "a_Texcoord"} } });
+
+    if (mesh.ColorBuffer)
+      if (DataTypeComponentCount(mesh.ColorBuffer->Descriptor.DataType) == 3)
+        attributeDesc.push_back({ mesh.NormalBuffer, 3, 4, { {mesh.NormalBuffer->Descriptor.DataType, "a_Color"} } });
+      else
+        attributeDesc.push_back({ mesh.NormalBuffer, 4, 5, { {mesh.NormalBuffer->Descriptor.DataType, "a_Color"} } });
 
     AttributeLayout& attributebuteLayout = device.RequestAttributeLayout(attributeDesc, mesh.IndexBuffer->RendererID);
 
@@ -235,8 +246,10 @@ namespace Pistachio
     Hash materialHash = GetHash(material);
     Ref<RenderPass> renderPass = pbrPassData.RenderPasses[materialHash];
 
-    renderPass->RecordCommandBuffer([&camera, vao, count, indexBufferBaseType, colorSamplerId, metallicRoughnessSamplerId, &pbrPassData, &material](Device& device, RenderingAPI& api)
+    renderPass->RecordCommandBuffer([&camera, transform, vao, count, indexBufferBaseType, colorSamplerId, metallicRoughnessSamplerId, &pbrPassData, &material](Device& device, RenderingAPI& api)
       {
+        UpdateModelUniformBuffer(pbrPassData, transform);
+
         if (colorSamplerId > 0)
           api.BindSampler(colorSamplerId, 0);
         if (metallicRoughnessSamplerId > 0)

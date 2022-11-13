@@ -474,7 +474,7 @@ namespace Pistachio
 				glEnableVertexAttribArray(binding);
 
 				uint32_t baseType = ShaderDataTypeToOpenGLBaseType(entry.Type);
-				uint32_t componentCount = glm::min(4u, ShaderDataTypeComponentCount(entry.Type));
+				uint32_t componentCount = glm::min(4u, DataTypeComponentCount(entry.Type));
 				uint32_t stride = layout.GetStride();
 				
 				glVertexAttribPointer(

@@ -23,10 +23,12 @@ namespace Pistachio
     Ref<Buffer> IndexBuffer;
     Ref<Buffer> PositionBuffer;
 
+    Ref<Buffer> ColorBuffer;
     Ref<Buffer> NormalBuffer;
     Ref<Buffer> TexCoordBuffer_0;
     Ref<Buffer> TexCoordBuffer_1;
 
+    void SetupColorBuffer(Device& device, BufferDescriptor bufferDescriptor);
     void SetupNormalBuffer(Device& device, BufferDescriptor bufferDescriptor);
     void SetupTexCoordBuffer(Device& device, int index, BufferDescriptor bufferDescriptor);
 
@@ -86,8 +88,19 @@ namespace Pistachio
   void BeginFrame(PBRPassData& pbrPassData, const glm::vec4& clearColor, Camera& camera);
   Ref<RenderPass> AddNewRenderPass(PBRPassData& pbrPassData, const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh, RenderGraph& renderGraph);
   
+  void Draw(const StaticMesh& materialMesh, const PBRMetallicRoughnessMaterial& material, const Transform& transform, Camera& camera, Device& device, PBRPassData& pbrPassData);
 
-  void Draw(const StaticMesh& materialMesh, const PBRMetallicRoughnessMaterial& material, Camera& camera, Device& device, PBRPassData& pbrPassData);
+  struct MaterialMesh
+  {
+    PBRMetallicRoughnessMaterial Material;
+    StaticMesh Mesh;
+  };
+  
+  struct Model
+  {
+    std::vector<MaterialMesh> Submeshes;
+  };
+
 
 }
 

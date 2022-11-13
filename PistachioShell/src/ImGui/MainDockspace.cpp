@@ -133,6 +133,11 @@ namespace Pistachio
             eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::Box });
           }
 
+          if (ImGui::MenuItem("BoxWithVertexColors"))
+          {
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::BoxVertexColors });
+          }
+
           if (ImGui::MenuItem("FlightHelmet"))
           {
             eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::FlightHelmet });
@@ -143,9 +148,14 @@ namespace Pistachio
             eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::Buggy });
           }
 
+          if (ImGui::MenuItem("ABeautifulGame"))
+          {
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::ABeautifulGame });
+          }
+
           if (ImGui::MenuItem("Sponza"))
           {
-            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::Buggy });
+            eventLibrary.Publish<ExampleSceneLoadEvent>({ ExampleScene::Sponza });
           }
 
           ImGui::EndMenu();

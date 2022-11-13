@@ -39,7 +39,11 @@ namespace Pistachio
     if (relationship.ParentID == entt::null)
       return transform;
     
-    return ComputeTransformRecursively(relationship.ParentID, scene) * transform;
+    Transform parentTransform = ComputeTransformRecursively(relationship.ParentID, scene);
+
+    Transform result = parentTransform * transform;
+    
+    return result;
     
   }
 
@@ -48,23 +52,31 @@ namespace Pistachio
     ResizeAttachments(pbrPassData, device, viewportWidth, viewportHeight);
     BeginFrame(pbrPassData, clearColor, camera);
 
-    auto modelsView = scene.GetGroup<PBRMetallicRoughnessMaterial>(Scene::GroupGet<StaticMesh, Transform>);
+    //auto modelsView = scene.GetGroup<PBRMetallicRoughnessMaterial>(Scene::GroupGet<StaticMesh, Transform>);
+    auto modelsView = scene.GetView<Model, Transform, SemanticNameComponent>();
     for (EntityID modelId : modelsView)
     {
-      PBRMetallicRoughnessMaterial& material = modelsView.get<PBRMetallicRoughnessMaterial>(modelId);
-      StaticMesh& mesh = modelsView.get<StaticMesh>(modelId);
+      SemanticNameComponent& name = modelsView.get<SemanticNameComponent>(modelId);
+      Model& model = modelsView.get<Model>(modelId);
 
       Transform transform = ComputeTransformRecursively(modelId, scene);
-      UpdateModelUniformBuffer(pbrPassData, transform);
-
-      Hash materialHash = GetHash(material);
       
-      if (pbrPassData.RenderPasses.count(materialHash) < 1)
+      for (auto& materialMesh : model.Submeshes)
       {
-        AddNewRenderPass(pbrPassData, material, mesh, renderGraph);
+        PBRMetallicRoughnessMaterial& material = materialMesh.Material;
+        StaticMesh& mesh = materialMesh.Mesh;
+
+        Hash materialHash = GetHash(material);
+
+        if (pbrPassData.RenderPasses.count(materialHash) < 1)
+        {
+          AddNewRenderPass(pbrPassData, material, mesh, renderGraph);
+        }
+
+        Draw(mesh, material, transform, camera, device, pbrPassData);
+
       }
-      
-      Draw(mesh, material, camera, device, pbrPassData);
+
       
     }
   }

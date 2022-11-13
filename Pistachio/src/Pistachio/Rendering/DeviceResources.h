@@ -155,7 +155,7 @@ namespace Pistachio
     }
   }
 
-  inline uint32_t ShaderDataTypeComponentCount(const BufferDataType& Type)
+  inline uint32_t DataTypeComponentCount(const BufferDataType& Type)
   {
     switch (Type)
     {

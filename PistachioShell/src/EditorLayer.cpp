@@ -121,16 +121,28 @@ namespace Pistachio
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Cube/glTF/Cube.gltf");
           m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
-
         case ExampleScene::Box:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Box/glTF/Box.gltf");
           m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
 
+        case ExampleScene::BoxVertexColors:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/BoxVertexColors/glTF/BoxVertexColors.gltf");
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          break;
+
+
         case ExampleScene::Buggy:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Buggy/glTF/Buggy.gltf");
+          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          break;
+
+        case ExampleScene::ABeautifulGame:
+
+          m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/ABeautifulGame/glTF/ABeautifulGame.gltf");
           m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
 
@@ -212,7 +224,7 @@ namespace Pistachio
       }
     );
 
-    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::Duck });
+    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::MetalRoughSpheres });
 
     PSTC_INFO("{0} attached!", GetName());
   }

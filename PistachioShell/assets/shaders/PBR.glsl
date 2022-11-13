@@ -23,11 +23,27 @@ layout(location = 1) in vec3 a_Normal;
 layout(location = 2) in vec2 a_Texcoord_0;
 #endif
 
+#ifdef _ENABLE_COLOR_BUFFER_3
+layout(location = 3) in vec3 a_Color;
+#endif
+
+#ifdef _ENABLE_COLOR_BUFFER_4
+layout(location = 4) in vec4 a_Color;
+#endif
+
 layout(location = 0) out vec3 out_WorldPosition;
 layout(location = 1) out vec3 out_Normal;
 
 #ifdef _ENABLE_TEXCOORD_0
 layout(location = 2) out vec2 out_Texcoord_0;
+#endif
+
+#ifdef _ENABLE_COLOR_BUFFER_3
+layout(location = 3) out vec3 out_Color;
+#endif
+
+#ifdef _ENABLE_COLOR_BUFFER_4
+layout(location = 4) out vec4 out_Color;
 #endif
 
 void main()
@@ -36,6 +52,14 @@ void main()
     
 #ifdef _ENABLE_TEXCOORD_0
     out_Texcoord_0 = a_Texcoord_0;
+#endif
+
+#ifdef _ENABLE_COLOR_BUFFER_4
+    out_Color = a_Color;
+#endif
+
+#ifdef _ENABLE_COLOR_BUFFER_3
+    out_Color = a_Color;
 #endif
 
     out_WorldPosition = (modelTransform * vec4(a_Position, 1.0)).xyz;
@@ -54,6 +78,10 @@ layout(location = 1) in vec3 in_Normal;
 
 #ifdef _ENABLE_TEXCOORD_0
 layout(location = 2) in vec2 in_Texcoord_0;
+#endif
+
+#ifdef _ENABLE_COLOR_BUFFER_3
+layout(location = 3) in vec2 in_Color;
 #endif
 
 layout(std140, binding = 0) uniform CameraData
@@ -163,6 +191,14 @@ void main()
   float roughness = max(metallicRoughnessFactor.y, 0.05f);
 #endif
 
+#ifdef _ENABLE_COLOR_BUFFER_3
+  color *= in_Color;
+#endif
+
+#ifdef _ENABLE_COLOR_BUFFER_4
+  color *= in_Color.xyz;
+#endif
+
   vec3 N = normalize(in_Normal);
   vec3 V = normalize(cameraPosition - in_WorldPosition);
   
@@ -218,6 +254,7 @@ void main()
   //out_color = vec4(N, 1.0f);
   //out_color = vec4(texture(u_MetallicRoughnessSampler, in_Texcoord_0).rgb, 1.0f);
   //out_color = vec4(in_Texcoord_0.st, 0.0f, 1.0f);
+  //out_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
   
   if (out_color.w == 0.0f)
     discard;

@@ -14,7 +14,9 @@ namespace Pistachio
     FlightHelmet,
     Cube,
     Box,
+    BoxVertexColors,
     Buggy,
+    ABeautifulGame,
     Sponza
   };
 

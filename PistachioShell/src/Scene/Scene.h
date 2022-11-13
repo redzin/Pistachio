@@ -98,6 +98,8 @@ namespace Pistachio
       return SceneEntity(other.m_Scene, other.m_EntityID);
     }
 
+    EntityID GetID() { return m_EntityID; }
+
     template<typename Component, typename... Args>
     decltype(auto) AddComponent(Args&&... args)
     {
@@ -163,8 +165,7 @@ namespace Pistachio
     {
       if (parentId != entt::null)
       {
-        SceneEntityRelationship relationship{ parentId };
-        AddComponent<SceneEntityRelationship>(relationship);
+        AddComponent<SceneEntityRelationship>(parentId);
       }
 
     }
