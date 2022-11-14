@@ -190,7 +190,7 @@ namespace Pistachio
   PBRMetallicRoughnessMaterial GetMaterial(Device& device, const tinygltf::Model& gltfObject, const tinygltf::Primitive& gltfPrimitive)
   {
     PBRMetallicRoughnessMaterial material;
-    material.SetUpUniforms(device, { glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec2(1.0, 1.0) });// gltf standard default: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.pdf
+    material.SetupUniforms(device, { glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec2(1.0, 1.0) });// gltf standard default: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.pdf
     if (gltfPrimitive.material >= 0)
     {
       const auto& gltfMaterial = gltfObject.materials[gltfPrimitive.material];
