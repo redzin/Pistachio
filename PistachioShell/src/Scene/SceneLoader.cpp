@@ -246,6 +246,28 @@ namespace Pistachio
         material.SetUpMetallicRoughnessMap(device, metallicRoughnessSamplerDescriptor, metallicRoughnessImage);
       }
 
+      if (gltfMaterial.normalTexture.index >= 0)
+      {
+        //gltfMaterial.normalTexture.texCoord; // figure out how to handle this
+        const auto& gltfNormalTexture = gltfObject.textures[gltfMaterial.normalTexture.index];
+        const auto& gltfNormalSampler = gltfObject.samplers[gltfNormalTexture.sampler];
+        const auto& gltfNormalImage = gltfObject.images[gltfNormalTexture.source];
+        SamplerDescriptor normalSamplerDescriptor;
+        normalSamplerDescriptor.MagFilter = gltfNormalSampler.magFilter;
+        normalSamplerDescriptor.MinFilter = gltfNormalSampler.minFilter;
+        normalSamplerDescriptor.TextureDescriptor.InternalFormat = INTERNAL_FORMAT_RGB8;
+        normalSamplerDescriptor.TextureDescriptor.SizeX = gltfNormalImage.width;
+        normalSamplerDescriptor.TextureDescriptor.SizeY = gltfNormalImage.height;
+        normalSamplerDescriptor.MipLevels = 1;
+        Image normalImage;
+        normalImage.Data = (void*)&gltfNormalImage.image[0];
+        normalImage.Width = gltfNormalImage.width;
+        normalImage.Height = gltfNormalImage.height;
+        normalImage.DataType = gltfNormalImage.pixel_type;
+        normalImage.Format = gltfNormalImage.component == 4 ? IMAGE_FORMAT_RGBA : IMAGE_FORMAT_RGB;
+        material.SetUpNormalMap(device, normalSamplerDescriptor, normalImage);
+      }
+
     }
     return material;
   }
@@ -334,6 +356,31 @@ namespace Pistachio
         else
         {
           PSTC_WARN("Could not locate mesh normal buffer!");
+        }
+
+        if (gltfPrimitive.attributes.count("TANGENT") > 0 && material.NormalMap)
+        {
+          int tangentAccessor = gltfPrimitive.attributes.at("TANGENT");
+
+          const auto& gltfTangentAccessor = gltfObject.accessors[tangentAccessor];
+          const auto& gltfTangentBufferView = gltfObject.bufferViews[gltfTangentAccessor.bufferView];
+          const auto& gltfTangentBuffer = gltfObject.buffers[gltfTangentBufferView.buffer];
+
+          BufferDescriptor tangentBufferDescriptor;
+          tangentBufferDescriptor.Size = ComputeBufferSize(gltfTangentAccessor);
+          tangentBufferDescriptor.DataType = BufferDataType::Float4;
+          mesh.SetupTangentBuffer(device, tangentBufferDescriptor);
+          ProcessBuffer((char*)mesh.TangentBuffer->MemoryPtr, gltfTangentAccessor, gltfTangentBufferView, gltfTangentBuffer);
+
+        }
+        else if (material.NormalMap)
+        {
+          // calculate tangent vectors manually
+          PSTC_WARN("Could not locate mesh tangent buffer!");
+        }
+        else
+        {
+          PSTC_WARN("Could not locate mesh tangent buffer!");
         }
 
         if (gltfPrimitive.attributes.count("TEXCOORD_0") > 0)

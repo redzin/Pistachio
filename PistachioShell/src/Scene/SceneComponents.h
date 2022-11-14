@@ -25,11 +25,13 @@ namespace Pistachio
 
     Ref<Buffer> ColorBuffer;
     Ref<Buffer> NormalBuffer;
+    Ref<Buffer> TangentBuffer;
     Ref<Buffer> TexCoordBuffer_0;
     Ref<Buffer> TexCoordBuffer_1;
 
     void SetupColorBuffer(Device& device, BufferDescriptor bufferDescriptor);
     void SetupNormalBuffer(Device& device, BufferDescriptor bufferDescriptor);
+    void SetupTangentBuffer(Device& device, BufferDescriptor bufferDescriptor);
     void SetupTexCoordBuffer(Device& device, int index, BufferDescriptor bufferDescriptor);
 
     uint32_t GetIndexCount() const { return m_IndexCount; };

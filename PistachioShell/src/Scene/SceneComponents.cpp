@@ -25,6 +25,11 @@ namespace Pistachio
     NormalBuffer = device.CreateBuffer(bufferDescriptor);
   }
 
+  void StaticMesh::SetupTangentBuffer(Device& device, BufferDescriptor bufferDescriptor)
+  {
+    TangentBuffer = device.CreateBuffer(bufferDescriptor);
+  }
+
   void StaticMesh::SetupTexCoordBuffer(Device& device, int index, BufferDescriptor bufferDescriptor)
   {
     if (index == 0)
@@ -131,6 +136,9 @@ namespace Pistachio
 
     if (material.MetallicRoughnessMap)
       shaderDescriptor.PrependSource += "#define _ENABLE_METALLIC_ROUGHNESS_TEXTURE\n";
+
+    if (mesh.TangentBuffer && material.NormalMap)
+      shaderDescriptor.PrependSource += "#define _ENABLE_NORMAL_MAPPING\n";
 
     return shaderDescriptor;
   }
@@ -244,6 +252,11 @@ namespace Pistachio
       else
         attributeDesc.push_back({ mesh.ColorBuffer, 4, 5, { {mesh.ColorBuffer->Descriptor.DataType, "a_Color"} } });
 
+    if (mesh.TangentBuffer && material.NormalMap)
+    {
+      attributeDesc.push_back({ mesh.TangentBuffer, 5, 6, { {mesh.TexCoordBuffer_0->Descriptor.DataType, "a_Tangent"} } });
+    }
+
     AttributeLayout& attributebuteLayout = device.RequestAttributeLayout(attributeDesc, mesh.IndexBuffer->RendererID);
 
     uint32_t count = mesh.GetIndexCount();
@@ -251,11 +264,12 @@ namespace Pistachio
     uint32_t indexBufferBaseType = ShaderDataTypeToOpenGLBaseType(mesh.IndexBuffer->Descriptor.DataType);
     int32_t colorSamplerId = material.ColorMap ? material.ColorMap->RendererID : -1;
     int32_t metallicRoughnessSamplerId = material.MetallicRoughnessMap ? material.MetallicRoughnessMap->RendererID : -1;
+    int32_t normalSamplerId = material.NormalMap ? material.NormalMap->RendererID : -1;
 
     Hash materialHash = GetHash(material);
     Ref<RenderPass> renderPass = pbrPassData.RenderPasses[materialHash];
 
-    renderPass->RecordCommandBuffer([&camera, transform, vao, count, indexBufferBaseType, colorSamplerId, metallicRoughnessSamplerId, &pbrPassData, &material](Device& device, RenderingAPI& api)
+    renderPass->RecordCommandBuffer([&camera, transform, vao, count, indexBufferBaseType, colorSamplerId, metallicRoughnessSamplerId, normalSamplerId, &pbrPassData, &material](Device& device, RenderingAPI& api)
       {
         UpdateModelUniformBuffer(pbrPassData, transform);
 
@@ -263,6 +277,8 @@ namespace Pistachio
           api.BindSampler(colorSamplerId, 0);
         if (metallicRoughnessSamplerId > 0)
           api.BindSampler(metallicRoughnessSamplerId, 1);
+        if (normalSamplerId > 0)
+          api.BindSampler(normalSamplerId, 2);
         api.BindBuffer(UNIFORM_BUFFER_TARGET, pbrPassData.DevicePerMeshUniformBuffer->RendererID, 1);
         api.BindBuffer(UNIFORM_BUFFER_TARGET, material.DeviceUniformBuffer->RendererID, 2);
         api.DrawIndexed(vao, count, PRIMITIVE_TRIANGLES, indexBufferBaseType);

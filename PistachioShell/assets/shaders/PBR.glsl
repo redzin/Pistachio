@@ -2,6 +2,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef _SHADER_TYPE_VERTEX_SHADER
 
+// Uniforms
 layout(std140, binding = 0) uniform CameraData
 {
   mat4 view;
@@ -16,6 +17,7 @@ layout(std140, binding = 1) uniform ModelUniforms
   mat4 normalMatrix;
 };
 
+// Attributes
 layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec3 a_Normal;
 
@@ -31,6 +33,11 @@ layout(location = 3) in vec3 a_Color;
 layout(location = 4) in vec4 a_Color;
 #endif
 
+#ifdef _ENABLE_NORMAL_MAPPING
+layout(location = 5) in vec4 a_Tangent;
+#endif
+
+// Out-variables
 layout(location = 0) out vec3 out_WorldPosition;
 layout(location = 1) out vec3 out_Normal;
 
@@ -46,24 +53,38 @@ layout(location = 3) out vec3 out_Color;
 layout(location = 4) out vec4 out_Color;
 #endif
 
+#ifdef _ENABLE_NORMAL_MAPPING
+//layout(location = 5) out vec4 out_Tangent;
+layout(location = 5) out mat3 out_TBN;
+#endif
+
 void main()
 {
-    out_Normal = mat3(normalMatrix) * a_Normal;
+  out_Normal = mat3(normalMatrix) * a_Normal;
     
 #ifdef _ENABLE_TEXCOORD_0
-    out_Texcoord_0 = a_Texcoord_0;
+  out_Texcoord_0 = a_Texcoord_0;
 #endif
 
 #ifdef _ENABLE_COLOR_BUFFER_4
-    out_Color = a_Color;
+  out_Color = a_Color;
 #endif
 
 #ifdef _ENABLE_COLOR_BUFFER_3
-    out_Color = a_Color;
+  out_Color = a_Color;
 #endif
 
-    out_WorldPosition = (modelTransform * vec4(a_Position, 1.0)).xyz;
-    gl_Position = projectionView * vec4(out_WorldPosition, 1.0);
+#ifdef _ENABLE_NORMAL_MAPPING
+  //out_Tangent = a_Tangent;
+  vec3 Bitangent = cross(a_Normal, a_Tangent.xyz * a_Tangent.w);
+  vec3 T = normalize(vec3(modelTransform * vec4(a_Tangent.xyz * a_Tangent.w, 0.0)));
+  vec3 B = normalize(vec3(modelTransform * vec4(Bitangent, 0.0)));
+  vec3 N = normalize(vec3(modelTransform * vec4(a_Normal, 0.0)));
+  out_TBN = mat3(T, B, N);
+#endif
+
+  out_WorldPosition = (modelTransform * vec4(a_Position, 1.0)).xyz;
+  gl_Position = projectionView * vec4(out_WorldPosition, 1.0);
 }
 #endif
 
@@ -73,6 +94,33 @@ void main()
 
 const float PI = 3.14159265359;
 
+// Uniforms
+layout(std140, binding = 0) uniform CameraData
+{
+  mat4 view;
+  mat4 projection;
+  mat4 projectionView;
+  vec3 cameraPosition;
+};
+
+layout(std140, binding = 2) uniform MaterialUniform
+{
+  vec4 colorFactor;
+  vec2 metallicRoughnessFactor;
+};
+
+// Samplers
+layout(binding = 0) uniform sampler2D u_ColorSampler;
+
+#ifdef _ENABLE_METALLIC_ROUGHNESS_TEXTURE
+layout(binding = 1) uniform sampler2D u_MetallicRoughnessSampler;
+#endif
+
+#ifdef _ENABLE_NORMAL_MAPPING
+layout(binding = 2) uniform sampler2D u_NormalSampler;
+#endif
+
+// In-variables
 layout(location = 0) in vec3 in_WorldPosition;
 layout(location = 1) in vec3 in_Normal;
 
@@ -88,24 +136,13 @@ layout(location = 3) in vec3 in_Color;
 layout(location = 4) in vec4 in_Color;
 #endif
 
-layout(std140, binding = 0) uniform CameraData
-{
-  mat4 view;
-  mat4 projection;
-  mat4 projectionView;
-  vec3 cameraPosition;
-};
+#ifdef _ENABLE_NORMAL_MAPPING
+layout(location = 5) in mat3 in_TBN;
+#endif
 
-layout(std140, binding = 2) uniform MaterialUniform
-{
-  vec4 colorFactor;
-  vec2 metallicRoughnessFactor;
-};
-
-layout(binding = 0) uniform sampler2D u_ColorSampler;
-layout(binding = 1) uniform sampler2D u_MetallicRoughnessSampler;
-
+// Out-variables
 out vec4 out_color;
+
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
@@ -190,9 +227,11 @@ void main()
 #if defined _ENABLE_TEXCOORD_0 && defined _ENABLE_METALLIC_ROUGHNESS_TEXTURE
   float metallic = metallicRoughnessFactor.x * texture(u_MetallicRoughnessSampler, in_Texcoord_0).b;
   float roughness = max(metallicRoughnessFactor.y * texture(u_MetallicRoughnessSampler, in_Texcoord_0).g, 0.05f);
+  float ao = texture(u_MetallicRoughnessSampler, in_Texcoord_0).r;
 #else
   float metallic = metallicRoughnessFactor.x;
   float roughness = max(metallicRoughnessFactor.y, 0.05f);
+  float ao = 1.0f;
 #endif
 
 #ifdef _ENABLE_COLOR_BUFFER_3
@@ -203,7 +242,14 @@ void main()
   color *= in_Color.xyz;
 #endif
 
+#ifdef _ENABLE_NORMAL_MAPPING
+  vec3 N = texture(u_NormalSampler, in_Texcoord_0).rgb;
+  N = N * 2.0f - 1.0f;
+  N = normalize(in_TBN * N);
+#else
   vec3 N = normalize(in_Normal);
+#endif
+
   vec3 V = normalize(cameraPosition - in_WorldPosition);
   
   // Surface reflection at zero incidence
@@ -246,10 +292,10 @@ void main()
     
   }
 
-  vec3 ambient = vec3(0.03f) * color; // improvised, temporary
+  vec3 ambient = vec3(0.03f) * color * ao;
   color = ambient + Lo;
 
-  // Gamme correction and tone mapping
+  // Gamma correction and tone mapping
   color = color / (color + vec3(1.0));
   color = pow(color, vec3(1.0/2.2));
 
@@ -257,6 +303,7 @@ void main()
   
   //out_color = vec4(N, 1.0f);
   //out_color = vec4(texture(u_MetallicRoughnessSampler, in_Texcoord_0).rgb, 1.0f);
+  //out_color = vec4(texture(u_NormalSampler, in_Texcoord_0).rgb, 1.0f);
   //out_color = vec4(in_Texcoord_0.st, 0.0f, 1.0f);
   //out_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
   

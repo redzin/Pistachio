@@ -223,7 +223,7 @@ namespace Pistachio
       }
     );
 
-    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::MetalRoughSpheres });
+    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::FlightHelmet });
 
     PSTC_INFO("{0} attached!", GetName());
   }
