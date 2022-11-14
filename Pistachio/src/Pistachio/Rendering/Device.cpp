@@ -71,19 +71,11 @@ namespace Pistachio
 
   Ref<Shader> Device::RequestShader(ShaderDescriptor shaderDescriptor)
   {
-    Hasher hasher;
-
-    for (const char& c : shaderDescriptor.Path)
-      hasher.hash(c);
-
-    for (const char& c : shaderDescriptor.PrependSource)
-      hasher.hash(c);
-
-    Hash hash = hasher.get();
+    Hash hash = GetHash(shaderDescriptor);
 
     if (m_Shaders.find(hash) != m_Shaders.end())
       return m_Shaders[hash];
-
+    
     auto rendererId = m_RenderingAPI->CreateShader(shaderDescriptor);
     m_Shaders[hash] = CreateRef<Shader>(rendererId, shaderDescriptor);
     return m_Shaders[hash];
