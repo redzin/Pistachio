@@ -86,6 +86,8 @@ namespace Pistachio
       {
 
         m_Scenes.clear();
+        m_SceneRenderer->Init(device, textureMap, glm::pow(maxSpritesSqrt, 2), 1024, 1024);
+
         switch (e.ExampleScene)
         {
         case ExampleScene::None:
@@ -223,7 +225,7 @@ namespace Pistachio
       }
     );
 
-    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::FlightHelmet });
+    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::ABeautifulGame });
 
     PSTC_INFO("{0} attached!", GetName());
   }

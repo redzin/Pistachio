@@ -221,7 +221,7 @@ namespace Pistachio
         colorImage.Height = gltfColorImage.height;
         colorImage.DataType = gltfColorImage.pixel_type;
         colorImage.Format = gltfColorImage.component == 4 ? IMAGE_FORMAT_RGBA : IMAGE_FORMAT_RGB;
-        material.SetUpColorTexture(device, colorSamplerDescriptor, colorImage);
+        material.SetupColorTexture(device, colorSamplerDescriptor, colorImage);
       }
 
       if (gltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0)
@@ -243,7 +243,7 @@ namespace Pistachio
         metallicRoughnessImage.Height = gltfMetallicRoughnessImage.height;
         metallicRoughnessImage.DataType = gltfMetallicRoughnessImage.pixel_type;
         metallicRoughnessImage.Format = gltfMetallicRoughnessImage.component == 4 ? IMAGE_FORMAT_RGBA : IMAGE_FORMAT_RGB;
-        material.SetUpMetallicRoughnessMap(device, metallicRoughnessSamplerDescriptor, metallicRoughnessImage);
+        material.SetupMetallicRoughnessMap(device, metallicRoughnessSamplerDescriptor, metallicRoughnessImage);
       }
 
       if (gltfMaterial.normalTexture.index >= 0)
@@ -265,7 +265,7 @@ namespace Pistachio
         normalImage.Height = gltfNormalImage.height;
         normalImage.DataType = gltfNormalImage.pixel_type;
         normalImage.Format = gltfNormalImage.component == 4 ? IMAGE_FORMAT_RGBA : IMAGE_FORMAT_RGB;
-        material.SetUpNormalMap(device, normalSamplerDescriptor, normalImage);
+        material.SetupNormalMap(device, normalSamplerDescriptor, normalImage);
       }
 
     }

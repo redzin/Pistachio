@@ -53,13 +53,13 @@ namespace Pistachio
   {
     PBRMetallicRoughnessMaterial();
 
-    void SetUpUniforms(Device& device);
-    void SetUpUniforms(Device& device, PBRMaterialUniformData data);
+    void SetupUniforms(Device& device);
+    void SetupUniforms(Device& device, PBRMaterialUniformData data);
     void UpdateUniforms();
     void UpdateUniforms(PBRMaterialUniformData data);
-    void SetUpColorTexture(Device& device, SamplerDescriptor& colorSamplerDescriptor, const Image& image);
-    void SetUpMetallicRoughnessMap(Device& device, SamplerDescriptor& metallicRoughnessSamplerDescriptor, const Image& image);
-    void SetUpNormalMap(Device& device, SamplerDescriptor& normalSamplerDescriptor, const Image& image);
+    void SetupColorTexture(Device& device, SamplerDescriptor& colorSamplerDescriptor, const Image& image);
+    void SetupMetallicRoughnessMap(Device& device, SamplerDescriptor& metallicRoughnessSamplerDescriptor, const Image& image);
+    void SetupNormalMap(Device& device, SamplerDescriptor& normalSamplerDescriptor, const Image& image);
 
     PBRMaterialUniformData UniformData;
     Ref<Buffer> DeviceUniformBuffer;

@@ -95,7 +95,7 @@ namespace Pistachio
 
   void SceneRenderer::Init(Device& device, std::unordered_map<std::string, uint32_t> textureMap, uint32_t maxSpriteCount, uint32_t samplerWidth, uint32_t samplerHeight)
   {
-
+    m_RenderGraph = RenderGraph();
     m_SpritePassData = CreateSpritePass(device, m_RenderGraph, textureMap, maxSpriteCount, samplerWidth, samplerHeight);
     m_PBRPassData = CreatePBRPass(device, m_RenderGraph);
     
@@ -110,6 +110,5 @@ namespace Pistachio
     m_RenderGraph.Render(device, viewportWidth, viewportHeight);
 
   }
-
   
 }

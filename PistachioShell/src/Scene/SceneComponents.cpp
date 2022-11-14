@@ -45,7 +45,7 @@ namespace Pistachio
   {
   }
 
-  void PBRMetallicRoughnessMaterial::SetUpUniforms(Device& device)
+  void PBRMetallicRoughnessMaterial::SetupUniforms(Device& device)
   {
 
     BufferDescriptor materialUniformBufferDescriptor;
@@ -55,7 +55,7 @@ namespace Pistachio
 
   }
 
-  void PBRMetallicRoughnessMaterial::SetUpUniforms(Device& device, PBRMaterialUniformData data)
+  void PBRMetallicRoughnessMaterial::SetupUniforms(Device& device, PBRMaterialUniformData data)
   {
 
     BufferDescriptor materialUniformBufferDescriptor;
@@ -80,19 +80,19 @@ namespace Pistachio
     memcpy(DeviceUniformBuffer->MemoryPtr, &UniformData, sizeof(PBRMaterialUniformData));
   }
 
-  void PBRMetallicRoughnessMaterial::SetUpColorTexture(Device& device, SamplerDescriptor& colorSamplerDescriptor, const Image& image)
+  void PBRMetallicRoughnessMaterial::SetupColorTexture(Device& device, SamplerDescriptor& colorSamplerDescriptor, const Image& image)
   {
     ColorMap = device.CreateSampler(colorSamplerDescriptor);
     device.UploadSamplerData(ColorMap, image);
   }
 
-  void PBRMetallicRoughnessMaterial::SetUpMetallicRoughnessMap(Device& device, SamplerDescriptor& metallicRoughnessSamplerDescriptor, const Image& image)
+  void PBRMetallicRoughnessMaterial::SetupMetallicRoughnessMap(Device& device, SamplerDescriptor& metallicRoughnessSamplerDescriptor, const Image& image)
   {
     MetallicRoughnessMap = device.CreateSampler(metallicRoughnessSamplerDescriptor);
     device.UploadSamplerData(MetallicRoughnessMap, image);
   }
 
-  void PBRMetallicRoughnessMaterial::SetUpNormalMap(Device& device, SamplerDescriptor& normalSamplerDescriptor, const Image& image)
+  void PBRMetallicRoughnessMaterial::SetupNormalMap(Device& device, SamplerDescriptor& normalSamplerDescriptor, const Image& image)
   {
     NormalMap = device.CreateSampler(normalSamplerDescriptor);
     device.UploadSamplerData(NormalMap, image);

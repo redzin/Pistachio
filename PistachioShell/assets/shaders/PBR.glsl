@@ -17,6 +17,10 @@ layout(std140, binding = 1) uniform ModelUniforms
   mat4 normalMatrix;
 };
 
+//uniform vec3 lightPositions[4];
+//uniform vec3 lightColors[4];
+
+
 // Attributes
 layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec3 a_Normal;
@@ -56,7 +60,9 @@ layout(location = 4) out vec4 out_Color;
 #ifdef _ENABLE_NORMAL_MAPPING
 //layout(location = 5) out vec4 out_Tangent;
 layout(location = 5) out mat3 out_TBN;
+
 #endif
+
 
 void main()
 {
@@ -184,9 +190,6 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
-//uniform vec3 lightPositions[4];
-//uniform vec3 lightColors[4];
-
 void main()
 {
   
@@ -243,8 +246,7 @@ void main()
 #endif
 
 #ifdef _ENABLE_NORMAL_MAPPING
-  vec3 N = texture(u_NormalSampler, in_Texcoord_0).rgb;
-  N = N * 2.0f - 1.0f;
+  vec3 N = texture(u_NormalSampler, in_Texcoord_0).rgb * 2.0f - 1.0f;
   N = normalize(in_TBN * N);
 #else
   vec3 N = normalize(in_Normal);
