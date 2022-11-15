@@ -15,7 +15,7 @@ namespace Pistachio
     ~SceneRenderer() = default;
     
     void Init(Device& device, std::unordered_map<std::string, uint32_t> textureMap, uint32_t maxSpriteCount, uint32_t samplerWidth, uint32_t samplerHeight);
-    void Render(Device& device, Scene& scene, Camera& camera, uint32_t viewportWidth, uint32_t viewportHeight, glm::vec4 clearColor);
+    void Render(Device& device, Scene& scene, Camera& camera, uint32_t viewportWidth, uint32_t viewportHeight, PBRShaderOverrides& shaderOverrides, glm::vec4 clearColor);
     std::map<std::string, Ref<Attachment>> GetDisplayReadyAttachments();
 
   private:

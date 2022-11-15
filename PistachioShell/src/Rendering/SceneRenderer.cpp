@@ -47,7 +47,7 @@ namespace Pistachio
     
   }
 
-  void RenderScene(PBRPassData& pbrPassData, Device& device, RenderGraph& renderGraph, Scene& scene, Camera& camera, glm::vec4 clearColor, uint32_t viewportWidth, uint32_t viewportHeight)
+  void RenderScene(PBRPassData& pbrPassData, Device& device, RenderGraph& renderGraph, Scene& scene, Camera& camera, PBRShaderOverrides& shaderOverrides, glm::vec4 clearColor, uint32_t viewportWidth, uint32_t viewportHeight)
   {
     ResizeAttachments(pbrPassData, device, viewportWidth, viewportHeight);
     BeginFrame(pbrPassData, clearColor, camera);
@@ -70,7 +70,7 @@ namespace Pistachio
 
         if (pbrPassData.RenderPasses.count(materialHash) < 1)
         {
-          AddNewRenderPass(pbrPassData, material, mesh, renderGraph);
+          AddNewRenderPass(pbrPassData, material, mesh, renderGraph, shaderOverrides);
         }
 
         Draw(mesh, material, transform, camera, device, pbrPassData);
@@ -83,7 +83,7 @@ namespace Pistachio
 
   std::map<std::string, Ref<Attachment>> SceneRenderer::GetDisplayReadyAttachments()
   {
-    std::map<std::string, Ref<Attachment>> attachments;
+    std::map<std::string, Ref<Attachment>> attachments = {};
 
     attachments["PBRPass_ColorAttachment"] = m_PBRPassData.ColorAttachment;
     attachments["PBRPass_DepthAttachment"] = m_PBRPassData.DepthAttachment;
@@ -101,11 +101,11 @@ namespace Pistachio
     
   }
 
-  void SceneRenderer::Render(Device& device, Scene& scene, Camera& camera, uint32_t viewportWidth, uint32_t viewportHeight, glm::vec4 clearColor)
+  void SceneRenderer::Render(Device& device, Scene& scene, Camera& camera, uint32_t viewportWidth, uint32_t viewportHeight, PBRShaderOverrides& shaderOverrides, glm::vec4 clearColor)
   {
 
     RenderScene(m_SpritePassData, device, scene, camera, clearColor, viewportWidth, viewportHeight);
-    RenderScene(m_PBRPassData, device, m_RenderGraph, scene, camera, clearColor, viewportWidth, viewportHeight);
+    RenderScene(m_PBRPassData, device, m_RenderGraph, scene, camera, shaderOverrides, clearColor, viewportWidth, viewportHeight);
 
     m_RenderGraph.Render(device, viewportWidth, viewportHeight);
 

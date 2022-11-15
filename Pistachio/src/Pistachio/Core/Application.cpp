@@ -89,20 +89,19 @@ namespace Pistachio
       // Consider refactoring events with ECS according to:
       // https://gamedev.stackexchange.com/questions/141636/event-handling-in-pure-entity-component-systems-is-this-approach-correct
 
-      for (auto layerIter = m_LayerStack.rbegin(); layerIter != m_LayerStack.rend(); layerIter++)
-      {
-        (*layerIter)->OnUpdate(lastFrameTime);
-        (*layerIter)->OnRender(m_Window.GetDevice(), m_Window);
-      }
 
       m_ImguiRenderer->BeginRender();
       for (Layer* layer : m_LayerStack)
       {
         layer->OnGuiRender(m_Window, m_EventLibrary);
       }
-      
       m_ImguiRenderer->EndRender();
 
+      for (auto layerIter = m_LayerStack.rbegin(); layerIter != m_LayerStack.rend(); layerIter++)
+      {
+        (*layerIter)->OnUpdate(lastFrameTime);
+        (*layerIter)->OnRender(m_Window.GetDevice(), m_Window);
+      }
       m_Window.SwapBuffers();
 
       lastFrameTime = std::chrono::steady_clock::now() - start;

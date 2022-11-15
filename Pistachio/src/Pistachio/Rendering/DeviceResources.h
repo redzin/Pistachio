@@ -70,6 +70,12 @@ namespace Pistachio
     ShaderDescriptor Descriptor;
   };
 
+  struct PBRShaderOverrides
+  {
+    bool NormalMappingEnabled = true;
+  };
+
+
   /////////////////////////////////////////////////////////
   /// Buffers
   /////////////////////////////////////////////////////////
@@ -538,8 +544,8 @@ namespace Pistachio
     PRIMITIVE_LINE_STRIP = 0x0003,
     PRIMITIVE_LINE_LOOP = 0x0002,
     PRIMITIVE_POINTS = 0x0000
-  } DrawingPrimitiveBits;
-  using DrawingPrimitive = uint32_t;
+  } DrawingModeBits;
+  using DrawingMode = uint32_t;
 
 
 

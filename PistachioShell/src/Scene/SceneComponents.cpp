@@ -114,7 +114,7 @@ namespace Pistachio
     return hasher.get();
   }
 
-  ShaderDescriptor GenerateShaderDescriptor(const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh)
+  ShaderDescriptor GenerateShaderDescriptor(const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh, PBRShaderOverrides& shaderOverrides)
   {
     ShaderDescriptor shaderDescriptor;
     shaderDescriptor.Path = "assets/shaders/PBR.glsl";
@@ -220,11 +220,11 @@ namespace Pistachio
     );
   }
 
-  Ref<RenderPass> AddNewRenderPass(PBRPassData& pbrPassData, const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh, RenderGraph& renderGraph)
+  Ref<RenderPass> AddNewRenderPass(PBRPassData& pbrPassData, const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh, RenderGraph& renderGraph, PBRShaderOverrides& shaderOverrides)
   {
-    Hash materialHash = GetHash(material);
-    ShaderDescriptor shaderDescriptor = GenerateShaderDescriptor(material, mesh);
+    ShaderDescriptor shaderDescriptor = GenerateShaderDescriptor(material, mesh, shaderOverrides);
 
+    Hash materialHash = GetHash(material);
     pbrPassData.RenderPasses[materialHash] = CreateRef<RenderPass>(std::move("PBR_Pass_" + std::to_string(materialHash)));
     pbrPassData.RenderPasses[materialHash]->SetShaderProgram(shaderDescriptor);
     pbrPassData.RenderPasses[materialHash]->SetRenderState(pbrPassData.RenderPassState);
@@ -259,29 +259,29 @@ namespace Pistachio
 
     AttributeLayout& attributebuteLayout = device.RequestAttributeLayout(attributeDesc, mesh.IndexBuffer->RendererID);
 
-    uint32_t count = mesh.GetIndexCount();
     RendererID vao = attributebuteLayout.RendererID;
-    uint32_t indexBufferBaseType = ShaderDataTypeToOpenGLBaseType(mesh.IndexBuffer->Descriptor.DataType);
-    int32_t colorSamplerId = material.ColorMap ? material.ColorMap->RendererID : -1;
-    int32_t metallicRoughnessSamplerId = material.MetallicRoughnessMap ? material.MetallicRoughnessMap->RendererID : -1;
-    int32_t normalSamplerId = material.NormalMap ? material.NormalMap->RendererID : -1;
 
     Hash materialHash = GetHash(material);
     Ref<RenderPass> renderPass = pbrPassData.RenderPasses[materialHash];
 
-    renderPass->RecordCommandBuffer([&camera, transform, vao, count, indexBufferBaseType, colorSamplerId, metallicRoughnessSamplerId, normalSamplerId, &pbrPassData, &material](Device& device, RenderingAPI& api)
+    renderPass->RecordCommandBuffer([&camera, transform, vao, &pbrPassData, &mesh, &material](Device& device, RenderingAPI& api)
       {
         UpdateModelUniformBuffer(pbrPassData, transform);
 
-        if (colorSamplerId > 0)
-          api.BindSampler(colorSamplerId, 0);
-        if (metallicRoughnessSamplerId > 0)
-          api.BindSampler(metallicRoughnessSamplerId, 1);
-        if (normalSamplerId > 0)
-          api.BindSampler(normalSamplerId, 2);
+        if (material.ColorMap)
+          api.BindSampler(material.ColorMap->RendererID, 0);
+        if (material.MetallicRoughnessMap)
+          api.BindSampler(material.MetallicRoughnessMap->RendererID, 1);
+        if (material.NormalMap)
+          api.BindSampler(material.NormalMap->RendererID, 2);
         api.BindBuffer(UNIFORM_BUFFER_TARGET, pbrPassData.DevicePerMeshUniformBuffer->RendererID, 1);
         api.BindBuffer(UNIFORM_BUFFER_TARGET, material.DeviceUniformBuffer->RendererID, 2);
-        api.DrawIndexed(vao, count, PRIMITIVE_TRIANGLES, indexBufferBaseType);
+        api.DrawIndexed(
+          vao,
+          mesh.GetIndexCount(),
+          mesh.DrawingMode,
+          ShaderDataTypeToOpenGLBaseType(mesh.IndexBuffer->Descriptor.DataType)
+        );
 
         camera.GetBuffer()->Lock();
         pbrPassData.DevicePerMeshUniformBuffer->Lock(); // lock buffer to prevent CPU from writing before the draw call is done

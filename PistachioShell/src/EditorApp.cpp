@@ -17,7 +17,7 @@ namespace Pistachio
 
   Pistachio::Application* Pistachio::ApplicationFactory::doCreate()
   {
-    EditorLayer* editorLayer = new EditorLayer(1280, 720);
+    EditorLayer* editorLayer = new EditorLayer();
 
     PistachioShell* app = new PistachioShell("Pistachio Editor", 1280, 720);
 

@@ -34,6 +34,8 @@ namespace Pistachio
     void SetupTangentBuffer(Device& device, BufferDescriptor bufferDescriptor);
     void SetupTexCoordBuffer(Device& device, int index, BufferDescriptor bufferDescriptor);
 
+    DrawingMode DrawingMode = PRIMITIVE_TRIANGLES;
+
     uint32_t GetIndexCount() const { return m_IndexCount; };
     uint32_t GetVertexCount() const { return m_VertexCount; };
 
@@ -88,7 +90,7 @@ namespace Pistachio
   void ResizeAttachments(PBRPassData& pbrPassData, Device& device, uint32_t viewportWidth, uint32_t viewportHeight);
   void UpdateModelUniformBuffer(PBRPassData& pbrPassData, const Transform& transform);
   void BeginFrame(PBRPassData& pbrPassData, const glm::vec4& clearColor, Camera& camera);
-  Ref<RenderPass> AddNewRenderPass(PBRPassData& pbrPassData, const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh, RenderGraph& renderGraph);
+  Ref<RenderPass> AddNewRenderPass(PBRPassData& pbrPassData, const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh, RenderGraph& renderGraph, PBRShaderOverrides& shaderOverrides);
   
   void Draw(const StaticMesh& materialMesh, const PBRMetallicRoughnessMaterial& material, const Transform& transform, Camera& camera, Device& device, PBRPassData& pbrPassData);
 

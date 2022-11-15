@@ -218,7 +218,7 @@ void main()
 
 #if defined _ENABLE_TEXCOORD_0 && defined _ENABLE_COLOR_TEXTURE
   //Albedo from color texture
-  vec3 color = texture(u_ColorSampler, in_Texcoord_0).xyz; // todo: move colorfactor after sRGB decoding / color correcting
+  vec3 color = texture(u_ColorSampler, in_Texcoord_0).xyz; // todo: try using opengl texture format sRGB instead of manually decoding
   color.r = pow(color.r, 2.2f);
   color.g = pow(color.g, 2.2f);
   color.b = pow(color.b, 2.2f);
@@ -303,7 +303,7 @@ void main()
 
   out_color = vec4(color, colorFactor.w);
   
-  //out_color = vec4(N, 1.0f);
+  out_color = vec4(N, 1.0f);
   //out_color = vec4(texture(u_MetallicRoughnessSampler, in_Texcoord_0).rgb, 1.0f);
   //out_color = vec4(texture(u_NormalSampler, in_Texcoord_0).rgb, 1.0f);
   //out_color = vec4(in_Texcoord_0.st, 0.0f, 1.0f);

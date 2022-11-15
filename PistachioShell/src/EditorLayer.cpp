@@ -3,67 +3,35 @@
 namespace Pistachio
 {
 
-  Camera& EditorLayer::GetActiveCamera()
+  void AddEditorCameraToScene(Device& device, Scene& scene, float fovY, uint32_t width, uint32_t height, float zNear, float zFar)
   {
-    if (m_SelectedSceneCameraIndex < 1)
-      return *m_EditorCamera;
-
-    if (m_SelectedSceneIndex < 0 || m_SelectedSceneIndex > m_Scenes.size())
-      return *m_EditorCamera;
-
-    EntityID selectedCameraID = m_SelectedSceneCameraEntityMap[m_SelectedSceneCameraIndex];
-    auto sceneCameraView = m_Scenes[m_SelectedSceneIndex].GetView<Camera>();
-    for (const EntityID& id : sceneCameraView)
-    {
-      if(id == selectedCameraID)
-        return sceneCameraView.get<Camera>(id);
-    }
-    
-    return *m_EditorCamera;
-  }
-
-  CameraOrbitController& EditorLayer::GetActiveCameraController()
-  {
-    if (m_SelectedSceneCameraIndex < 1)
-      return m_EditorCameraOrbitController;
-
-    if (m_SelectedSceneIndex < 0 || m_SelectedSceneIndex > m_Scenes.size())
-      return m_EditorCameraOrbitController;
-
-    EntityID selectedCameraID = m_SelectedSceneCameraEntityMap[m_SelectedSceneCameraIndex];
-    auto sceneCameraView = m_Scenes[m_SelectedSceneIndex].GetView<CameraOrbitController>();
-    for (const EntityID& id : sceneCameraView)
-    {
-      if (id == selectedCameraID)
-        return sceneCameraView.get<CameraOrbitController>(id);
-    }
-
-    return m_EditorCameraOrbitController;
-    
+    SceneEntity editorCameraEntity = scene.CreateEntity();
+    editorCameraEntity.AddComponent<EditorCameraTag>();
+    editorCameraEntity.AddComponent<SemanticNameComponent>("Editor Camera");
+    CameraOrbitController& camOrbitController = editorCameraEntity.AddComponent<CameraOrbitController>();
+    editorCameraEntity.AddComponent<Camera>(
+      std::move(
+        camOrbitController.CreatePerspectiveCamera(
+          device,
+          glm::vec3(0.0f, 0.0f, 0.0f),
+          glm::vec3(0.0f, 0.0f, -1.0f),
+          5.0f,
+          fovY,
+          width,
+          height,
+          zNear,
+          zFar
+        )
+      )
+      );
   }
 
   void EditorLayer::OnAttach(Window& window, EventLibrary& eventLib)
   {
+    eventLib.Register<ExampleSceneLoadEvent>();
+
     Device& device = window.GetDevice();
     m_SceneRenderer = CreateScope<SceneRenderer>();
-    m_Dockspace = CreateScope<MainDockspace>(eventLib);
-
-    m_EditorCamera.reset(new Camera(
-      std::move(
-            m_EditorCameraOrbitController.CreatePerspectiveCamera(
-              device,
-              glm::vec3(0),
-              glm::vec3(0.0f, 0.0f, -1.0f),
-              5.0f,
-              fovY,
-              m_Viewport.GetWidth(),
-              m_Viewport.GetHeight(),
-              zNear,
-              zFar
-          )
-        )
-      )
-    );
 
     std::string texChechkerboardPath = "assets/textures/Checkerboard.png";
     std::string texChernoPath = "assets/textures/ChernoLogo.png";
@@ -96,61 +64,61 @@ namespace Pistachio
         case ExampleScene::Cube:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Cube/glTF/Cube.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          m_Dockspace.ScenePanel.SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
 
         case ExampleScene::Box:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Box/glTF/Box.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          m_Dockspace.ScenePanel.SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
 
         case ExampleScene::BoxVertexColors:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/BoxVertexColors/glTF/BoxVertexColors.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          m_Dockspace.ScenePanel.SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
 
         case ExampleScene::Duck:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Duck/glTF/Duck.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          m_Dockspace.ScenePanel.SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
 
         case ExampleScene::MetalRoughSpheres:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/MetalRoughSpheres/glTF/MetalRoughSpheres.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          m_Dockspace.ScenePanel.SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
           
         case ExampleScene::EnvironmentTest:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/EnvironmentTest/glTF/EnvironmentTest.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          m_Dockspace.ScenePanel.SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
 
         case ExampleScene::FlightHelmet:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          m_Dockspace.ScenePanel.SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
 
         case ExampleScene::Buggy:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Buggy/glTF/Buggy.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          m_Dockspace.ScenePanel.SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
 
         case ExampleScene::ABeautifulGame:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/ABeautifulGame/glTF/ABeautifulGame.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          m_Dockspace.ScenePanel.SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
 
         case ExampleScene::Sponza:
 
           m_Scenes = m_SceneLoader.LoadGLTF(device, "vendor/gltf-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
-          m_SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
+          m_Dockspace.ScenePanel.SelectedSceneIndex = m_Scenes.size() > 0 ? 0 : -1;
           break;
 
         case ExampleScene::OneMillionSprites:
@@ -170,8 +138,8 @@ namespace Pistachio
                 glm::vec3(0.0f, 0.0f, -1.0f),
                 5.0f,
                 fovY,
-                m_Viewport.GetWidth(),
-                m_Viewport.GetHeight(),
+                m_Dockspace.RenderViewport.Width,
+                m_Dockspace.RenderViewport.Height,
                 zNear,
                 zFar
               )
@@ -220,12 +188,15 @@ namespace Pistachio
           break;
         }
 
+        for (auto& scene : m_Scenes)
+          AddEditorCameraToScene(device, scene, fovY, m_Dockspace.RenderViewport.Width, m_Dockspace.RenderViewport.Width, zNear, zFar);
+
         return true;
 
       }
     );
 
-    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::ABeautifulGame });
+    eventLib.Publish< ExampleSceneLoadEvent>({ ExampleScene::Sponza });
 
     PSTC_INFO("{0} attached!", GetName());
   }
@@ -238,11 +209,16 @@ namespace Pistachio
   void EditorLayer::OnUpdate(std::chrono::duration<float> dt)
   {
 
-    uint32_t viewportWidth = m_Viewport.GetWidth();
-    uint32_t viewportHeight = m_Viewport.GetHeight();
+    uint32_t viewportWidth =  m_Dockspace.RenderViewport.Width;
+    uint32_t viewportHeight = m_Dockspace.RenderViewport.Height;
 
-    Camera& camera = GetActiveCamera();
-    CameraOrbitController& cameraOrbitController = GetActiveCameraController();
+    if (m_Dockspace.ScenePanel.SelectedSceneIndex < 0 || m_Scenes.size() < 1 || m_Dockspace.ScenePanel.SelectedSceneIndex >= m_Scenes.size())
+      return;
+
+    Scene& scene = m_Scenes[m_Dockspace.ScenePanel.SelectedSceneIndex];
+
+    Camera& camera = GetActiveCamera(m_Dockspace.CameraPanel, scene);
+    CameraOrbitController& cameraOrbitController = GetActiveCameraController(m_Dockspace.CameraPanel, scene);
 
     cameraOrbitController.UpdateCamera(camera, dt);
 
@@ -255,80 +231,28 @@ namespace Pistachio
 
   void EditorLayer::OnRender(Device& device, Window& window)
   {
-    if (m_SelectedSceneIndex < 0 || m_Scenes.size() < m_SelectedSceneIndex)
+    if (m_Dockspace.ScenePanel.SelectedSceneIndex < 0 || m_Scenes.size() < 1)
       return;
 
-    Camera& camera = GetActiveCamera();
+    Scene& scene = m_Scenes[m_Dockspace.ScenePanel.SelectedSceneIndex];
+    Camera& camera = GetActiveCamera(m_Dockspace.CameraPanel, scene);
     glm::uvec2 viewportDimensions = camera.GetViewportDimensions();
 
     if (m_Scenes.size() > 0)
-      m_SceneRenderer->Render(device, m_Scenes[m_SelectedSceneIndex], camera, viewportDimensions.x, viewportDimensions.y, m_ClearColor);
+      m_SceneRenderer->Render(device, m_Scenes[m_Dockspace.ScenePanel.SelectedSceneIndex], camera, viewportDimensions.x, viewportDimensions.y, m_Dockspace.PBRShaderPanel.PBRShaderOverrides, m_Dockspace.PBRShaderPanel.ClearColorPicker.ClearColor);
   }
 
   void EditorLayer::OnGuiRender(Window& window, EventLibrary& eventLibrary)
   {
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigWindowsMoveFromTitleBarOnly = true;
-    io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
 
-    m_Dockspace->SetPanelDockingInfo({ "Dockspace", m_PerformanceTracker.GetName() , ImGuiDir_Left });
-    m_Dockspace->SetPanelDockingInfo({ "Dockspace", "Temp Debug Panel" , ImGuiDir_Left });
-    //m_Dockspace.SetPanelDockingInfo({ m_PerformanceTracker.GetName(), "Temp Debug Panel", ImGuiDir_Down }); // Todo: make this line work and delete previous line
-    m_Dockspace->Render(eventLibrary);
-    m_PerformanceTracker.Render(window, m_ClearColor);
+    ImGui::ShowDemoWindow();
 
-
-    ImGui::Begin("Temp Debug Panel");
-
-
-    std::map<std::string, Ref<Attachment>> sceneAttachments = m_SceneRenderer->GetDisplayReadyAttachments();
-    std::vector<const char*> attachmentNames;
-    for (const auto& [name, att] : sceneAttachments)
-      attachmentNames.push_back(name.c_str());
-
-    static int selectedPresentTextureIndex = 0;
-    ImGui::ListBox("Display texture", &selectedPresentTextureIndex, attachmentNames.data(), attachmentNames.size(), 3);
-
-
-    std::vector<const char*> sceneNames;
-    for (const auto& scene : m_Scenes)
-      sceneNames.push_back(scene.GetSceneName().c_str());
-
-    ImGui::ListBox("Scenes", &m_SelectedSceneIndex, sceneNames.data(), sceneNames.size(), 3);
-
-
-    m_SelectedSceneCameraEntityMap.clear();
-    std::vector<const char*> cameraNames;
-    cameraNames.push_back("Editor Camera");
-    if (m_SelectedSceneIndex >= 0 && m_SelectedSceneIndex < m_Scenes.size())
-    {
-      int i = 1;
-      auto sceneCameraView = m_Scenes[m_SelectedSceneIndex].GetView<SemanticNameComponent, Camera>();
-      for (const EntityID& id : sceneCameraView)
-      {
-        SemanticNameComponent& name = sceneCameraView.get<SemanticNameComponent>(id);
-        m_SelectedSceneCameraEntityMap[i] = id;
-        cameraNames.push_back(std::move(name.c_str()));
-        i++;
-      }
-    }
-
-    ImGui::ListBox("Cameras", &m_SelectedSceneCameraIndex, cameraNames.data(), cameraNames.size(), 3);
-
-    Camera& camera = GetActiveCamera();
-    glm::vec3 cameraPosition = camera.GetPosition();
-
-    ImGui::Text("Primary camera location: (%.2f, %.2f, %.2f)", cameraPosition.x, cameraPosition.y, cameraPosition.z);
-
-    ImGui::End();
-
-    if (attachmentNames.size() > 0)
-    {
-      std::string texName = std::string(attachmentNames[selectedPresentTextureIndex]);
-      Ref<Attachment> activeDisplayAttachment = sceneAttachments[texName];
-      m_Viewport.Render(window, GetActiveCameraController(), activeDisplayAttachment);
-    }
-
+    Render(m_Dockspace, eventLibrary);
+    Render(m_Dockspace.PerformanceTracker, window);
+    Render(m_Dockspace.PBRShaderPanel);
+    Render(m_Dockspace.ScenePanel, m_Dockspace.CameraPanel, m_Scenes);
+    Render(m_Dockspace.RenderGraphAttachmentPanel, m_SceneRenderer->GetDisplayReadyAttachments());
+    Render(m_Dockspace.RenderViewport, m_Dockspace.RenderGraphAttachmentPanel, m_Dockspace.ScenePanel, window, GetActiveCameraController(m_Dockspace.CameraPanel, m_Scenes[m_Dockspace.ScenePanel.SelectedSceneIndex]));
 
   }
 

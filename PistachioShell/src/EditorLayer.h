@@ -7,9 +7,7 @@
 #include "Scene/Camera/CameraOrbitController.h"
 #include "Scene/SceneLoader.h"
 #include "Rendering/SceneRenderer.h"
-#include "ImGui/MainDockspace.h"
-#include "ImGui/RenderViewport.h"
-#include "ImGui/PerformanceTracker.h"
+#include "ImGui/ImGuiPanels.h"
 
 namespace Pistachio
 {
@@ -21,37 +19,22 @@ namespace Pistachio
     //Scene and rendering variables
     SceneLoader m_SceneLoader;
     Scope<SceneRenderer> m_SceneRenderer;
-    glm::vec4 m_ClearColor{ 0.65f, 0.88f, 0.92f, 1.00f };
+    std::vector<Scene> m_Scenes;
 
-    Ref<Camera> m_EditorCamera;
-    CameraOrbitController m_EditorCameraOrbitController;
+    //Ref<Camera> m_EditorCamera;
+    //CameraOrbitController m_EditorCameraOrbitController;
     inline static constexpr float fovY = 70;
-    inline static constexpr float zNear = 0.1f;
+    inline static constexpr float zNear = 0.05f;
     inline static constexpr float zFar = 1000.0f;
 
-    // ImGui Panels
-    // Camera variables
-    int32_t m_SelectedSceneIndex = -1;
-    int32_t m_SelectedSceneCameraIndex = 0;
-    std::unordered_map<int32_t, EntityID> m_SelectedSceneCameraEntityMap;
-    Camera& GetActiveCamera();
-    CameraOrbitController& GetActiveCameraController();
-    std::vector<Scene> m_Scenes;
-    Scope<MainDockspace> m_Dockspace;
-    Viewport m_Viewport;
-    PerformanceTracker m_PerformanceTracker;
+    //Camera& GetActiveCamera(CameraPanel& cameraPanel);
+    //CameraOrbitController& GetActiveCameraController(CameraPanel& cameraPanel);
 
-    // ImGui Debug Panel
-    //std::vector<const char*> m_PresentTextureNames;
+    // ImGui Panels
+    MainDockspace m_Dockspace;
 
   public:
-
     const char* GetName() const { return "Main Editor Layer"; }
-
-    EditorLayer(uint32_t width, uint32_t height)
-      : m_Viewport(Viewport(width, height))
-    {
-    }
 
     void OnAttach(Window& window, EventLibrary& eventLib) override;
 
