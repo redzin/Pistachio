@@ -51,8 +51,7 @@ namespace Pistachio
   {
     ResizeAttachments(pbrPassData, device, viewportWidth, viewportHeight);
     BeginFrame(pbrPassData, clearColor, camera);
-
-    //auto modelsView = scene.GetGroup<PBRMetallicRoughnessMaterial>(Scene::GroupGet<StaticMesh, Transform>);
+    
     auto modelsView = scene.GetView<Model, Transform, SemanticNameComponent>();
     for (EntityID modelId : modelsView)
     {
@@ -76,8 +75,6 @@ namespace Pistachio
         Draw(mesh, material, transform, camera, device, pbrPassData);
 
       }
-
-      
     }
   }
 

@@ -128,7 +128,7 @@ namespace Pistachio
   }
 
   // Deinterleaves buffers and copies onto GPU virtual memory
-  void ProcessBuffer(char* bufferDestPtr, const tinygltf::Accessor& gltfAccessor, const tinygltf::BufferView& gltfBufferView, const tinygltf::Buffer& gltfBuffer)
+  void ProcessBuffer(char* bufferDestPtr, const tinygltf::Accessor& gltfAccessor, const tinygltf::BufferView& gltfBufferView, const tinygltf::Buffer& gltfBuffer, bool skipW = false)
   {
     uint32_t offset = gltfBufferView.byteOffset + gltfAccessor.byteOffset;
     uint32_t sourceIndex = 0, destIndex = 0;
@@ -140,6 +140,9 @@ namespace Pistachio
     {
       for (int j = 0; j < coordinateCount; j++)
       {
+        if (skipW && j == 3)
+          continue;
+
         for (int k = 0; k < bytesPerCoordinate; k++)
         {
           // offset + element index * stride in total bytes + component index * byte size of each component + byte index through component
@@ -187,46 +190,39 @@ namespace Pistachio
     return transform;
   }
 
-  glm::vec4 ComputeTangent(const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2, const glm::vec2& uv0, const glm::vec2& uv1, const glm::vec2& uv2)
+  //http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-13-normal-mapping/
+  void ComputeTangent(const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2, const glm::vec2& uv0, const glm::vec2& uv1, const glm::vec2& uv2, glm::vec3& out_tangent)
   {
-    // Edges of the triangle : position delta
     glm::vec3 deltaPos1 = p1 - p0;
     glm::vec3 deltaPos2 = p2 - p0;
 
-    // UV delta
     glm::vec2 deltaUV1 = uv1 - uv0;
     glm::vec2 deltaUV2 = uv2 - uv0;
 
-    // Compute tangent
     float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-    return glm::vec4((deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * f, 1.0f);
+    out_tangent = f * (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y);
   }
 
+  // TODO: do on compute shader
   void ComputeTangentBuffer(Device& device, StaticMesh& mesh)
   {
-    uint32_t indexCount = mesh.GetIndexCount();
-    uint32_t vertexCount = mesh.GetVertexCount();
+    auto indexCount = mesh.GetIndexCount();
+    auto vertexCount = mesh.GetVertexCount();
 
     BufferDescriptor tangentBufferDescriptor;
-    tangentBufferDescriptor.Size = vertexCount * sizeof(glm::vec4);
-    tangentBufferDescriptor.DataType = BufferDataType::Float4;
-    mesh.SetupTangentBuffer(device, tangentBufferDescriptor);
+    tangentBufferDescriptor.DataType = BufferDataType::Float3;
+    tangentBufferDescriptor.Size = vertexCount * ShaderDataTypeSize(tangentBufferDescriptor.DataType);
+    mesh.SetupTangentAndBitangentBuffers(device, tangentBufferDescriptor);
 
-    glm::vec4* tangentBufferPtr = (glm::vec4*)mesh.TangentBuffer->MemoryPtr;
-
-    glm::vec3 position;
-    glm::vec2 texcoord;
+    auto tangentBufferPtr = (glm::vec3*)mesh.TangentBuffer->MemoryPtr;
+    auto bitangentBufferPtr = (glm::vec3*)mesh.BitangentBuffer->MemoryPtr;
 
     uint32_t index0;
     uint32_t index1;
     uint32_t index2;
-    glm::vec3 deltaPos1;
-    glm::vec3 deltaPos2;
-    glm::vec2 deltaUV1;
-    glm::vec2 deltaUV2;
+
     for (int i = 0; i < indexCount - 2; i += 3)
     {
-
       // Get the indices from the index buffer
       if (mesh.IndexBuffer->Descriptor.DataType == BufferDataType::UnsignedByte)
       {
@@ -249,28 +245,57 @@ namespace Pistachio
       else
         PSTC_ASSERT(false, "Invalid index buffer data type!");
 
-
-      // Read the position buffer at the right indices
-      glm::vec3& v0 = ((glm::vec3*)mesh.PositionBuffer->MemoryPtr)[index0]; // positions[i + 0];
+      glm::vec3& v0 = ((glm::vec3*)mesh.PositionBuffer->MemoryPtr)[index0];
       glm::vec3& v1 = ((glm::vec3*)mesh.PositionBuffer->MemoryPtr)[index1];
       glm::vec3& v2 = ((glm::vec3*)mesh.PositionBuffer->MemoryPtr)[index2];
 
-      // Read texcoords at the right indices
       glm::vec2& uv0 = ((glm::vec2*)mesh.TexCoordBuffer_0->MemoryPtr)[index0];
       glm::vec2& uv1 = ((glm::vec2*)mesh.TexCoordBuffer_0->MemoryPtr)[index1];
       glm::vec2& uv2 = ((glm::vec2*)mesh.TexCoordBuffer_0->MemoryPtr)[index2];
 
-      tangentBufferPtr[index0] = ComputeTangent(v0, v1, v2, uv0, uv1, uv2);
-      tangentBufferPtr[index1] = ComputeTangent(v1, v2, v0, uv1, uv2, uv0);
-      tangentBufferPtr[index2] = ComputeTangent(v2, v0, v1, uv2, uv0, uv1);
-    }
+      glm::vec3 tangent;
+      ComputeTangent(v0, v1, v2, uv0, uv1, uv2, tangent);
 
+      tangentBufferPtr[index0] = tangent;
+      tangentBufferPtr[index1] = tangent;
+      tangentBufferPtr[index2] = tangent;
+
+    }
+  }
+
+  void GramSchmidtOrthogonalizeTangent(glm::vec3& n, glm::vec3& t, glm::vec3& b)
+  {
+    t = glm::normalize(t - n * glm::dot(n, t));
+  }
+  
+  void FixTBNHandedness(glm::vec3& n, glm::vec3& t, glm::vec3& b)
+  {
+    if (glm::dot(glm::cross(n, t), b) < 0.0f) {
+      t = t * -1.0f;
+    }
+  }
+
+  // TODO: do this on a compute shader
+  void ComputeBitangentBufferFromNormalAndTangentBuffer(const StaticMesh& mesh)
+  {
+    auto vertexCount = mesh.GetVertexCount();
+
+    for (int i = 0; i < vertexCount; i++)
+    {
+      glm::vec3& normal = ((glm::vec3*)mesh.NormalBuffer->MemoryPtr)[i];
+      glm::vec3& tangent = ((glm::vec3*)mesh.TangentBuffer->MemoryPtr)[i];
+      glm::vec3& bitangent = ((glm::vec3*)mesh.BitangentBuffer->MemoryPtr)[i];
+      bitangent = glm::cross(normal, tangent);
+
+      GramSchmidtOrthogonalizeTangent(normal, tangent, bitangent);
+      FixTBNHandedness(normal, tangent, bitangent);
+    }
   }
 
   PBRMetallicRoughnessMaterial GetMaterial(Device& device, const tinygltf::Model& gltfObject, const tinygltf::Primitive& gltfPrimitive)
   {
     PBRMetallicRoughnessMaterial material;
-    material.SetupUniforms(device, { glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec2(1.0, 1.0) });// gltf standard default: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.pdf
+    material.SetupUniforms(device, { glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec2(1.0, 1.0) }); // gltf standard default: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.pdf
     if (gltfPrimitive.material >= 0)
     {
       const auto& gltfMaterial = gltfObject.materials[gltfPrimitive.material];
@@ -407,7 +432,6 @@ namespace Pistachio
         if (gltfPrimitive.attributes.count("COLOR_0") > 0)
         {
           int colorAccessorIndex = gltfPrimitive.attributes.at("COLOR_0");
-
           const auto& gltfColorAccessor = gltfObject.accessors[colorAccessorIndex];
           const auto& gltfcolorBufferView = gltfObject.bufferViews[gltfColorAccessor.bufferView];
           const auto& gltfcolorBuffer = gltfObject.buffers[gltfcolorBufferView.buffer];
@@ -416,6 +440,7 @@ namespace Pistachio
           colorBufferDescriptor.Size = ComputeBufferSize(gltfColorAccessor);
           colorBufferDescriptor.DataType = GetDataType(gltfColorAccessor);
           mesh.SetupColorBuffer(device, colorBufferDescriptor);
+
           ProcessBuffer((char*)mesh.ColorBuffer->MemoryPtr, gltfColorAccessor, gltfcolorBufferView, gltfcolorBuffer);
 
         }
@@ -427,7 +452,6 @@ namespace Pistachio
         if (gltfPrimitive.attributes.count("NORMAL") > 0)
         {
           int normalAccessorIndex = gltfPrimitive.attributes.at("NORMAL");
-
           const auto& gltfNormalAccessor = gltfObject.accessors[normalAccessorIndex];
           const auto& gltfNormalBufferView = gltfObject.bufferViews[gltfNormalAccessor.bufferView];
           const auto& gltfNormalBuffer = gltfObject.buffers[gltfNormalBufferView.buffer];
@@ -436,6 +460,7 @@ namespace Pistachio
           normalBufferDescriptor.Size = ComputeBufferSize(gltfNormalAccessor);
           normalBufferDescriptor.DataType = BufferDataType::Float3;
           mesh.SetupNormalBuffer(device, normalBufferDescriptor);
+
           ProcessBuffer((char*)mesh.NormalBuffer->MemoryPtr, gltfNormalAccessor, gltfNormalBufferView, gltfNormalBuffer);
 
         }
@@ -447,7 +472,6 @@ namespace Pistachio
         if (gltfPrimitive.attributes.count("TEXCOORD_0") > 0)
         {
           int accessorIndex = gltfPrimitive.attributes.at("TEXCOORD_0");
-
           const auto& gltfTexcoordAccessor = gltfObject.accessors[accessorIndex];
           const auto& gltfTexcoordBufferView = gltfObject.bufferViews[gltfTexcoordAccessor.bufferView];
           const auto& gltfTexcoordBuffer = gltfObject.buffers[gltfTexcoordBufferView.buffer];
@@ -459,6 +483,7 @@ namespace Pistachio
             gltfTexcoordAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT ? BufferDataType::UnsignedShort2 :
             BufferDataType::Float2;
           mesh.SetupTexCoordBuffer(device, 0, texcoordBufferDescriptor);
+
           ProcessBuffer((char*)mesh.TexCoordBuffer_0->MemoryPtr, gltfTexcoordAccessor, gltfTexcoordBufferView, gltfTexcoordBuffer);
         }
         else
@@ -469,7 +494,6 @@ namespace Pistachio
         if (gltfPrimitive.attributes.count("TEXCOORD_1") > 0)
         {
           int accessorIndex = gltfPrimitive.attributes.at("TEXCOORD_1");
-
           const auto& gltfTexcoordAccessor = gltfObject.accessors[accessorIndex];
           const auto& gltfTexcoordBufferView = gltfObject.bufferViews[gltfTexcoordAccessor.bufferView];
           const auto& gltfTexcoordBuffer = gltfObject.buffers[gltfTexcoordBufferView.buffer];
@@ -478,6 +502,7 @@ namespace Pistachio
           texcoordBufferDescriptor.Size = ComputeBufferSize(gltfTexcoordAccessor);
           texcoordBufferDescriptor.DataType = BufferDataType::Float2;
           mesh.SetupTexCoordBuffer(device, 1, texcoordBufferDescriptor);
+
           ProcessBuffer((char*)mesh.TexCoordBuffer_1->MemoryPtr, gltfTexcoordAccessor, gltfTexcoordBufferView, gltfTexcoordBuffer);
         }
         else
@@ -485,26 +510,25 @@ namespace Pistachio
           PSTC_WARN("Could not locate mesh texture coordinate buffer 1!");
         }
 
-
         if (gltfPrimitive.attributes.count("TANGENT") > 0 && material.NormalMap)
         {
-          ComputeTangentBuffer(device, mesh);
-          //int tangentAccessor = gltfPrimitive.attributes.at("TANGENT");
-          //
-          //const auto& gltfTangentAccessor = gltfObject.accessors[tangentAccessor];
-          //const auto& gltfTangentBufferView = gltfObject.bufferViews[gltfTangentAccessor.bufferView];
-          //const auto& gltfTangentBuffer = gltfObject.buffers[gltfTangentBufferView.buffer];
-          //
-          //BufferDescriptor tangentBufferDescriptor;
-          //tangentBufferDescriptor.Size = ComputeBufferSize(gltfTangentAccessor);
-          //tangentBufferDescriptor.DataType = BufferDataType::Float4;
-          //mesh.SetupTangentBuffer(device, tangentBufferDescriptor);
-          //ProcessBuffer((char*)mesh.TangentBuffer->MemoryPtr, gltfTangentAccessor, gltfTangentBufferView, gltfTangentBuffer);
-
+          int tangentAccessor = gltfPrimitive.attributes.at("TANGENT");
+          const auto& gltfTangentAccessor = gltfObject.accessors[tangentAccessor];
+          const auto& gltfTangentBufferView = gltfObject.bufferViews[gltfTangentAccessor.bufferView];
+          const auto& gltfTangentBuffer = gltfObject.buffers[gltfTangentBufferView.buffer];
+          
+          BufferDescriptor tangentBufferDescriptor;
+          tangentBufferDescriptor.DataType = BufferDataType::Float3;
+          tangentBufferDescriptor.Size = ComputeBufferSize(gltfTangentAccessor);
+          mesh.SetupTangentAndBitangentBuffers(device, tangentBufferDescriptor);
+          
+          ProcessBuffer((char*)mesh.TangentBuffer->MemoryPtr, gltfTangentAccessor, gltfTangentBufferView, gltfTangentBuffer, true);
+          ComputeBitangentBufferFromNormalAndTangentBuffer(mesh);
         }
         else if (material.NormalMap)
         {
           ComputeTangentBuffer(device, mesh);
+          ComputeBitangentBufferFromNormalAndTangentBuffer(mesh);
         }
         else
         {

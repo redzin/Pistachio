@@ -245,7 +245,7 @@ namespace Pistachio
   void EditorLayer::OnGuiRender(Window& window, EventLibrary& eventLibrary)
   {
 
-    ImGui::ShowDemoWindow();
+    //ImGui::ShowDemoWindow();
 
     Render(m_Dockspace, eventLibrary);
     Render(m_Dockspace.PerformanceTracker, window);

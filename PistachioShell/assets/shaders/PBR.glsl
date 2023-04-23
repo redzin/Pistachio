@@ -38,7 +38,8 @@ layout(location = 4) in vec4 a_Color;
 #endif
 
 #ifdef _ENABLE_NORMAL_MAPPING
-layout(location = 5) in vec4 a_Tangent;
+layout(location = 5) in vec3 a_Tangent;
+layout(location = 6) in vec3 a_Bitangent;
 #endif
 
 // Out-variables
@@ -58,7 +59,6 @@ layout(location = 4) out vec4 out_Color;
 #endif
 
 #ifdef _ENABLE_NORMAL_MAPPING
-//layout(location = 5) out vec4 out_Tangent;
 layout(location = 5) out mat3 out_TBN;
 
 #endif
@@ -81,11 +81,11 @@ void main()
 #endif
 
 #ifdef _ENABLE_NORMAL_MAPPING
-  //out_Tangent = a_Tangent;
-  vec3 Bitangent = cross(a_Normal, a_Tangent.xyz * a_Tangent.w);
-  vec3 T = normalize(vec3(modelTransform * vec4(a_Tangent.xyz * a_Tangent.w, 0.0)));
-  vec3 B = normalize(vec3(modelTransform * vec4(Bitangent, 0.0)));
-  vec3 N = normalize(vec3(modelTransform * vec4(a_Normal, 0.0)));
+//  vec3 Bitangent = cross(a_Normal, a_Tangent.xyz * a_Tangent.w);
+  mat3 modelTransform3x3 = mat3(modelTransform);
+  vec3 T = normalize(modelTransform3x3 * a_Tangent);
+  vec3 B = normalize(modelTransform3x3 * a_Bitangent);
+  vec3 N = normalize(modelTransform3x3 * a_Normal);
   out_TBN = mat3(T, B, N);
 #endif
 
@@ -196,7 +196,6 @@ void main()
   vec3 lightPositions[4];
   vec3 lightColors[4];
 
-
   vec3 up = vec3(0.0f, 1.0f, 0.0f);
   vec3 right = normalize(cross(cameraPosition, up));
   
@@ -206,8 +205,8 @@ void main()
   //lightPositions[2] = cameraPosition +  0.0f * up +  5.0f * right; // to be input from CPU
   
   lightPositions[0] = vec3(-0.0f,  10.0f,  20.0f); // to be input from CPU
-  lightPositions[1] = vec3( 0.0f, -10.0f,  20.0f); // to be input from CPU
-  lightPositions[3] = vec3(-0.0f,  10.0f, -20.0f); // to be input from CPU
+  lightPositions[1] = vec3( 50.0f, -10.0f,  20.0f); // to be input from CPU
+  lightPositions[3] = vec3(-50.0f,  10.0f, -20.0f); // to be input from CPU
   lightPositions[2] = vec3( 0.0f, -10.0f, -20.0f); // to be input from CPU
 
   lightColors[0] = vec3(1.0f, 1.0f, 1.0f) * 1000.0f; // to be input from CPU
@@ -303,7 +302,7 @@ void main()
 
   out_color = vec4(color, colorFactor.w);
   
-  out_color = vec4(N, 1.0f);
+  //out_color = vec4(abs(N), 1.0f);
   //out_color = vec4(texture(u_MetallicRoughnessSampler, in_Texcoord_0).rgb, 1.0f);
   //out_color = vec4(texture(u_NormalSampler, in_Texcoord_0).rgb, 1.0f);
   //out_color = vec4(in_Texcoord_0.st, 0.0f, 1.0f);

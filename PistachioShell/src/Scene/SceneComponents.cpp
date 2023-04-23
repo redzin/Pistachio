@@ -25,9 +25,10 @@ namespace Pistachio
     NormalBuffer = device.CreateBuffer(bufferDescriptor);
   }
 
-  void StaticMesh::SetupTangentBuffer(Device& device, BufferDescriptor bufferDescriptor)
+  void StaticMesh::SetupTangentAndBitangentBuffers(Device& device, BufferDescriptor bufferDescriptor)
   {
     TangentBuffer = device.CreateBuffer(bufferDescriptor);
+    BitangentBuffer = device.CreateBuffer(bufferDescriptor);
   }
 
   void StaticMesh::SetupTexCoordBuffer(Device& device, int index, BufferDescriptor bufferDescriptor)
@@ -252,9 +253,10 @@ namespace Pistachio
       else
         attributeDesc.push_back({ mesh.ColorBuffer, 4, 5, { {mesh.ColorBuffer->Descriptor.DataType, "a_Color"} } });
 
-    if (mesh.TangentBuffer && material.NormalMap)
+    if (mesh.TangentBuffer && mesh.BitangentBuffer && material.NormalMap)
     {
-      attributeDesc.push_back({ mesh.TangentBuffer, 5, 6, { {mesh.TexCoordBuffer_0->Descriptor.DataType, "a_Tangent"} } });
+      attributeDesc.push_back({ mesh.TangentBuffer, 5, 6, { {mesh.TangentBuffer->Descriptor.DataType, "a_Tangent"} } });
+      attributeDesc.push_back({ mesh.BitangentBuffer, 6, 7, { {mesh.BitangentBuffer->Descriptor.DataType, "a_Bitangent"} } });
     }
 
     AttributeLayout& attributebuteLayout = device.RequestAttributeLayout(attributeDesc, mesh.IndexBuffer->RendererID);
