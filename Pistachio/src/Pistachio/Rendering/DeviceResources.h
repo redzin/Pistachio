@@ -70,7 +70,7 @@ namespace Pistachio
     ShaderDescriptor Descriptor;
   };
 
-  struct PBRShaderOverrides
+  struct PBRMaterialOverrides
   {
     bool NormalMappingEnabled = true;
   };

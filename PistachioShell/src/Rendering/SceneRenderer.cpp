@@ -47,7 +47,7 @@ namespace Pistachio
     
   }
 
-  void RenderScene(PBRPassData& pbrPassData, Device& device, RenderGraph& renderGraph, Scene& scene, Camera& camera, PBRShaderOverrides& shaderOverrides, glm::vec4 clearColor, uint32_t viewportWidth, uint32_t viewportHeight)
+  void RenderScene(PBRPassData& pbrPassData, Device& device, RenderGraph& renderGraph, Scene& scene, Camera& camera, PBRMaterialOverrides& shaderOverrides, glm::vec4 clearColor, uint32_t viewportWidth, uint32_t viewportHeight)
   {
     ResizeAttachments(pbrPassData, device, viewportWidth, viewportHeight);
     BeginFrame(pbrPassData, clearColor, camera);
@@ -65,11 +65,12 @@ namespace Pistachio
         PBRMetallicRoughnessMaterial& material = materialMesh.Material;
         StaticMesh& mesh = materialMesh.Mesh;
 
+        material.Overrides = shaderOverrides;
         Hash materialHash = GetHash(material);
 
         if (pbrPassData.RenderPasses.count(materialHash) < 1)
         {
-          AddNewRenderPass(pbrPassData, material, mesh, renderGraph, shaderOverrides);
+          AddNewRenderPass(pbrPassData, material, mesh, renderGraph);
         }
 
         Draw(mesh, material, transform, camera, device, pbrPassData);
@@ -98,7 +99,7 @@ namespace Pistachio
     
   }
 
-  void SceneRenderer::Render(Device& device, Scene& scene, Camera& camera, uint32_t viewportWidth, uint32_t viewportHeight, PBRShaderOverrides& shaderOverrides, glm::vec4 clearColor)
+  void SceneRenderer::Render(Device& device, Scene& scene, Camera& camera, uint32_t viewportWidth, uint32_t viewportHeight, PBRMaterialOverrides& shaderOverrides, glm::vec4 clearColor)
   {
 
     RenderScene(m_SpritePassData, device, scene, camera, clearColor, viewportWidth, viewportHeight);

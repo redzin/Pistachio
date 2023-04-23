@@ -71,6 +71,8 @@ namespace Pistachio
     Ref<Sampler> MetallicRoughnessMap;
     Ref<Sampler> NormalMap;
 
+    PBRMaterialOverrides Overrides;
+
   };
   Hash GetHash(PBRMetallicRoughnessMaterial material);
 
@@ -91,7 +93,7 @@ namespace Pistachio
   void ResizeAttachments(PBRPassData& pbrPassData, Device& device, uint32_t viewportWidth, uint32_t viewportHeight);
   void UpdateModelUniformBuffer(PBRPassData& pbrPassData, const Transform& transform);
   void BeginFrame(PBRPassData& pbrPassData, const glm::vec4& clearColor, Camera& camera);
-  Ref<RenderPass> AddNewRenderPass(PBRPassData& pbrPassData, const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh, RenderGraph& renderGraph, PBRShaderOverrides& shaderOverrides);
+  Ref<RenderPass> AddNewRenderPass(PBRPassData& pbrPassData, const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh, RenderGraph& renderGraph);
   
   void Draw(const StaticMesh& materialMesh, const PBRMetallicRoughnessMaterial& material, const Transform& transform, Camera& camera, Device& device, PBRPassData& pbrPassData);
 

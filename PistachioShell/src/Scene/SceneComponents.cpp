@@ -111,11 +111,12 @@ namespace Pistachio
     hasher.hash(material.UniformData.MetallicRoughnessFactor.y);
     hasher.hash(material.MetallicRoughnessMap == nullptr);
     hasher.hash(material.NormalMap == nullptr);
+    hasher.hash(material.Overrides.NormalMappingEnabled);
 
     return hasher.get();
   }
 
-  ShaderDescriptor GenerateShaderDescriptor(const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh, PBRShaderOverrides& shaderOverrides)
+  ShaderDescriptor GenerateShaderDescriptor(const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh)
   {
     ShaderDescriptor shaderDescriptor;
     shaderDescriptor.Path = "assets/shaders/PBR.glsl";
@@ -138,7 +139,7 @@ namespace Pistachio
     if (material.MetallicRoughnessMap)
       shaderDescriptor.PrependSource += "#define _ENABLE_METALLIC_ROUGHNESS_TEXTURE\n";
 
-    if (mesh.TangentBuffer && material.NormalMap)
+    if (mesh.TangentBuffer && material.NormalMap && material.Overrides.NormalMappingEnabled)
       shaderDescriptor.PrependSource += "#define _ENABLE_NORMAL_MAPPING\n";
 
     return shaderDescriptor;
@@ -221,9 +222,9 @@ namespace Pistachio
     );
   }
 
-  Ref<RenderPass> AddNewRenderPass(PBRPassData& pbrPassData, const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh, RenderGraph& renderGraph, PBRShaderOverrides& shaderOverrides)
+  Ref<RenderPass> AddNewRenderPass(PBRPassData& pbrPassData, const PBRMetallicRoughnessMaterial& material, const StaticMesh& mesh, RenderGraph& renderGraph)
   {
-    ShaderDescriptor shaderDescriptor = GenerateShaderDescriptor(material, mesh, shaderOverrides);
+    ShaderDescriptor shaderDescriptor = GenerateShaderDescriptor(material, mesh);
 
     Hash materialHash = GetHash(material);
     pbrPassData.RenderPasses[materialHash] = CreateRef<RenderPass>(std::move("PBR_Pass_" + std::to_string(materialHash)));

@@ -297,7 +297,7 @@ namespace Pistachio
   {
     ImGui::Begin(pbrShaderPanel.Name.c_str());
 
-    ImGui::Checkbox("Normal Mapping", &pbrShaderPanel.PBRShaderOverrides.NormalMappingEnabled);
+    ImGui::Checkbox("Normal Mapping", &pbrShaderPanel.PBRMaterialOverrides.NormalMappingEnabled);
 
     Render(pbrShaderPanel.ClearColorPicker);
 

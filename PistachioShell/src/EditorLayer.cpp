@@ -239,7 +239,7 @@ namespace Pistachio
     glm::uvec2 viewportDimensions = camera.GetViewportDimensions();
 
     if (m_Scenes.size() > 0)
-      m_SceneRenderer->Render(device, m_Scenes[m_Dockspace.ScenePanel.SelectedSceneIndex], camera, viewportDimensions.x, viewportDimensions.y, m_Dockspace.PBRShaderPanel.PBRShaderOverrides, m_Dockspace.PBRShaderPanel.ClearColorPicker.ClearColor);
+      m_SceneRenderer->Render(device, m_Scenes[m_Dockspace.ScenePanel.SelectedSceneIndex], camera, viewportDimensions.x, viewportDimensions.y, m_Dockspace.PBRShaderPanel.PBRMaterialOverrides, m_Dockspace.PBRShaderPanel.ClearColorPicker.ClearColor);
   }
 
   void EditorLayer::OnGuiRender(Window& window, EventLibrary& eventLibrary)

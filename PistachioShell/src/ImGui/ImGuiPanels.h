@@ -88,7 +88,7 @@ namespace Pistachio
   struct PBRShaderPanel
   {
     std::string Name = "PBR Shader";
-    PBRShaderOverrides PBRShaderOverrides;
+    PBRMaterialOverrides PBRMaterialOverrides;
     ClearColorPicker ClearColorPicker;
   };
   void Render(PBRShaderPanel& pbrShaderPanel);
