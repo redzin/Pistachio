@@ -101,7 +101,7 @@ project "Pistachio"
 
 include "Pistachio/vendor/GLFW"
 include "Pistachio/vendor/glad"
-include "Pistachio/vendor/ImGui"
+include "Pistachio/vendor/imgui"
 
 include "Samples/Counter"
 include "PistachioShell"
